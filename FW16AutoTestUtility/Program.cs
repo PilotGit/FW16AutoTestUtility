@@ -11,7 +11,7 @@ namespace FWAutoTestUtility
         static void Main(string[] args)
         {
             Class1 fw16 = new Class1();
-            Console.WriteLine();
+            Console.WriteLine("(press any key)");
             Console.ReadKey();
         }
     }
