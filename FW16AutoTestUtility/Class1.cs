@@ -17,7 +17,8 @@ namespace FWAutoTestUtility
         public Class1()
         {
             ecrCtrl = new EcrCtrl();
-            //ConnectToFW();
+            ConnectToFW();
+            BeginTest();
         }
 
         //функция подключения/переподключения к ККТ
@@ -52,7 +53,7 @@ namespace FWAutoTestUtility
             Console.WriteLine("Модель: " + ecrCtrl.Info.EcrInfo.Model);
         }
 
-        private void BeginTest(object sender, EventArgs e)
+        private void BeginTest()
         {
             ConnectToFW();
             Preparation();
