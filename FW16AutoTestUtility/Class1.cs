@@ -13,10 +13,34 @@ namespace FWAutoTestUtility
         string nameOerator = "test program";                        //имя касира 
         decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
         decimal[] counts = new decimal[] { 1m, 5m, 0.17m, 1.73m };  //варианты колличества
+        Dictionary<Native.CmdExecutor.VatCodeType, int> vatCode;
+        Dictionary<Fw16.Model.VatCode, int> vatCode2;
+
+        enum MyEnum
+        {
+            
+        }
 
         public Class1()
         {
             ecrCtrl = new EcrCtrl();
+            vatCode = new Dictionary<Native.CmdExecutor.VatCodeType, int>() {
+                { Native.CmdExecutor.VatCodeType.Vat18,1 },
+                { Native.CmdExecutor.VatCodeType.Vat10,2 },
+                { Native.CmdExecutor.VatCodeType.Vat0,3 },
+                { Native.CmdExecutor.VatCodeType.NoVat,4 },
+                { Native.CmdExecutor.VatCodeType.Vat18Included,5 },
+                { Native.CmdExecutor.VatCodeType.Vat10Included,6 },
+            };
+            vatCode2 = new Dictionary<Fw16.Model.VatCode, int>() {
+                { Fw16.Model.VatCode.Vat18,1 },
+                { Fw16.Model.VatCode.Vat10,2 },
+                { Fw16.Model.VatCode.Vat0,3 },
+                { Fw16.Model.VatCode.NoVat,4 },
+                { Fw16.Model.VatCode.Vat18Included,5 },
+                { Fw16.Model.VatCode.Vat10Included,6 },
+            };
+            vatCode[receiptEntry.VatCode]
             ConnectToFW();
             BeginTest();
         }
@@ -77,7 +101,7 @@ namespace FWAutoTestUtility
         public void SimpleTest()                            //функция прогона по всем видам чеков и чеков коррекции
         {
             ecrCtrl.Shift.Open(nameOerator);                //открытие смены для этого теста
-            getRegisters();
+            GetRegisters();
             GetCounters();
             TestReceipt();                                  //вызов функции тестирования чека
             //TestCorrection();                               //вызов функции тестирования чека коррекции
@@ -131,14 +155,22 @@ namespace FWAutoTestUtility
             {
                 var document = ecrCtrl.Shift.BeginCorrection(nameOerator, (Fw16.Model.ReceiptKind)ReceptKind);
                 decimal sum = 0;
+
+                decimal[] registersTmp = new decimal[236];           //массив временных регистров
+
                 for (int i = 0; i < 7; i++)                                                                             //перебор возврата средств всеми способами, целове и дробная суммы
                 {
                     document.AddTender((Native.CmdExecutor.TenderCode)(i / 2), coasts[i % 2]);
                     sum += coasts[i % 2];
                 }
-                for (int i = 0; i < 5; i++)                                                                             //перебор налоговых ставок
+                for (int i = 1; i < 6; i++)                                                                             //перебор налоговых ставок
                 {
-                    document.AddAmount((Fw16.Model.VatCode)((i / 2) + 1), Math.Round(sum / 6, 2));
+                    document.AddAmount((Fw16.Model.VatCode)(i), Math.Round(sum / 6m, 2));
+
+                    registersTmp[(ReceptKind==3?10:0) + i + 60] += Math.Round(sum / 6m, 2);     //сумма по ставкам НДС
+                    if (i != 3 && i != 4)
+                        registersTmp[(ReceptKind - 1) * 10 + (i > 4 ? i - 2 : i) + 120 + 5] += Math.Round(sum / 6m, 2);    //сумма НДС 
+
                 }
                 document.AddAmount(Fw16.Model.VatCode.NoVat, sum - Math.Round(sum / 6, 2) * 5);
                 if (abort)
@@ -149,6 +181,7 @@ namespace FWAutoTestUtility
                 }
                 else
                 {
+                    registers[ReceptKind + 4] += sum;
                     document.Complete();                                                                                //закрытие чека коррекции
                     Console.WriteLine("Оформлен чек коррекции типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");        //логирование
                     counters[ReceptKind + 4]++;
@@ -173,16 +206,17 @@ namespace FWAutoTestUtility
                 {
                     //создание товара
                     receiptEntry = document.NewItemCosted(i.ToString(), "tovar " + i, counts[i / 12], (Native.CmdExecutor.VatCodeType)((i / 2 % 6) + 1), coasts[i % 2]);
+                    
                     document.AddEntry(receiptEntry);                                                        //добавления товара в чек
 
-                    registersTmp[(ReceptKind - 1) * 10 + (int)receiptEntry.VatCode - 1 + 120] += receiptEntry.Cost;     //сумма по ставкам НДС
-                    if ((int)receiptEntry.VatCode != 3 && (int)receiptEntry.VatCode != 4)
-                        registersTmp[(ReceptKind - 1) * 10 + ((int)receiptEntry.VatCode > 4 ? (int)receiptEntry.VatCode - 2 : (int)receiptEntry.VatCode) + 120 + 5] += receiptEntry.VatAmount;    //сумма НДС 
+                    registersTmp[(ReceptKind - 1) * 10 + vatCode[receiptEntry.VatCode] - 1 + 120] += receiptEntry.Cost;     //сумма по ставкам НДС
+                    if (vatCode[receiptEntry.VatCode] != 3 && vatCode[receiptEntry.VatCode] != 4)
+                        registersTmp[(ReceptKind - 1) * 10 + (vatCode[receiptEntry.VatCode] > 4 ? vatCode[receiptEntry.VatCode] - 2 : vatCode[receiptEntry.VatCode]) + 120 + 5] += receiptEntry.VatAmount;    //сумма НДС 
 
                     registersTmp[160] += receiptEntry.Cost;                                                 //Сумма открытого документа; рассчитывается по стоимости тваров
-                    registersTmp[(int)receiptEntry.VatCode + 160] += receiptEntry.Cost;                     //Сумма открытого документа по ставкам НДС
-                    if ((int)receiptEntry.VatCode != 3 && (int)receiptEntry.VatCode != 4)
-                        registersTmp[((int)receiptEntry.VatCode > 4 ? (int)receiptEntry.VatCode - 2 : (int)receiptEntry.VatCode) + 160 + 6] += receiptEntry.VatAmount; //сумма НДС открытого документа
+                    registersTmp[vatCode[receiptEntry.VatCode] + 160] += receiptEntry.Cost;                     //Сумма открытого документа по ставкам НДС
+                    if (vatCode[receiptEntry.VatCode] != 3 && vatCode[receiptEntry.VatCode] != 4)
+                        registersTmp[(vatCode[receiptEntry.VatCode] > 4 ? vatCode[receiptEntry.VatCode] - 2 : vatCode[receiptEntry.VatCode]) + 160 + 6] += receiptEntry.VatAmount; //сумма НДС открытого документа
                     registersTmp[171]++;                                                                    //Количество товарных позиций
 
 
@@ -268,7 +302,7 @@ namespace FWAutoTestUtility
             Console.WriteLine("Запрошены данные с счётчиков с " + startIndex + " по " + endIndex + "\n" + err);           //логирование
         }
 
-        public void getRegisters()                                                      //считывание значений всех регистров в переменные
+        public void GetRegisters()                                                      //считывание значений всех регистров в переменные
         {
             ushort endIndex = 236;
             ushort startIndex = 1;
