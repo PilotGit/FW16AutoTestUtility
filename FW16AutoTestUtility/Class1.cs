@@ -65,8 +65,6 @@ namespace FWAutoTestUtility
 
         public void Preparation()                                                                        //Функция подготовки к тестам
         {
-            RequestRegisters();
-            RequestCounters();
             ecrCtrl.Service.SetParameter(Native.CmdExecutor.ParameterCode.AbortDocFontSize, "51515");    //отключение печати чека
             if ((ecrCtrl.Info.Status & Fw16.Ecr.GeneralStatus.DocOpened) > 0)
             {
@@ -81,12 +79,14 @@ namespace FWAutoTestUtility
         public void SimpleTest()                            //функция прогона по всем видам чеков и чеков коррекции
         {
             ecrCtrl.Shift.Open(nameOerator);                //открытие смены для этого теста
+            getRegisters();
+            GetCounters();
             TestReceipt();                                  //вызов функции тестирования чека
             TestCorrection();                               //вызов функции тестирования чека коррекции
             TestNonFiscal();                                //вызов функции нефискального документа
-            TestReceipt(true);                                  //вызов функции тестирования чека c отменой
-            TestCorrection(true);                               //вызов функции тестирования чека коррекции с отменой
-            TestNonFiscal(true);                                //вызов функции нефискального документа с отменой
+            TestReceipt(true);                              //вызов функции тестирования чека c отменой
+            //TestCorrection(true);                           //вызов функции тестирования чека коррекции с отменой
+            TestNonFiscal(true);                            //вызов функции нефискального документа с отменой
             ecrCtrl.Shift.Close(nameOerator);               //закрытие смены этого теста
 
             RequestRegisters();
@@ -172,68 +172,72 @@ namespace FWAutoTestUtility
                 {
                     //создание товара
                     receiptEntry = document.NewItemCosted(i.ToString(), "tovar " + i, counts[i / 12], (Native.CmdExecutor.VatCodeType)((i / 2 % 6) + 1), coasts[i % 2]);
-                    document.AddEntry(receiptEntry);                                                //добавления товара в чек
+                    document.AddEntry(receiptEntry);                                                        //добавления товара в чек
 
                     //textBox1.Text += "Добавлен " + "tovar " + i + "";
                 }
-                decimal balance = Math.Round(document.Total / 8, 2);                                //Сумма разделённая на количество типов оплаты.
+                decimal balance = Math.Round(document.Total / 8, 2);                                        //Сумма разделённая на количество типов оплаты.
                 for (int i = 7; i > 0; i--)
                 {
-                    Math.Round(document.AddPayment((Native.CmdExecutor.TenderCode)i, balance));     //оплата всеми способами кроме нала
+                    Math.Round(document.AddPayment((Native.CmdExecutor.TenderCode)i, balance));             //оплата всеми способами кроме нала
                 }
-                balance = document.Total - document.TotalaPaid;                                     //вычисление остатка суммы для оплаты 
-                document.AddPayment((Native.CmdExecutor.TenderCode)0, balance);                     //оплата наличнми
+                balance = document.Total - document.TotalaPaid;                                             //вычисление остатка суммы для оплаты 
+                document.AddPayment((Native.CmdExecutor.TenderCode)0, balance);                             //оплата наличнми
                 if (abort)
                 {
-                    document.Abort();                                                               //отмена документа
-                    Console.WriteLine("Отменён чек типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");     //логирование
-                    counters[ReceptKind + 11]++;
+                    document.Abort();                                                                       //отмена документа
+                    Console.WriteLine("Отменён чек типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");       //логирование
+                    counters[ReceptKind + 11]++;                                                            //увеличение счётчика отмены соотвествующего типа чека
                 }
                 else
                 {
-                    document.Complete();                                                            //закрытие чека
-                    Console.WriteLine("Оформлен чек типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");     //логирование
-                    counters[ReceptKind]++;
+                    document.Complete();                                                                    //закрытие чека
+                    Console.WriteLine("Оформлен чек типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");      //логирование
+                    counters[ReceptKind]++;                                                                 //учеличение счётчика оформленного соответсвющего типа чека
                 }
-                RequestRegisters(160, 181);                                                         //запрос регистров по открытому документу
+                RequestRegisters(160, 181);                                                                 //запрос регистров по открытому документу
             }
         }
 
         public void RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)      //запрос значений всех регистров / начиная с индекса / в диапозоне [startIndex,endIndex) 
         {
-            endIndex = endIndex > 0 ? endIndex : (ushort)236;
+            endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
+            string err = "";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
             {
                 try
                 {
-                    ecrCtrl.Info.GetRegister(i);
+                    decimal tmp = ecrCtrl.Info.GetRegister(i);
+                    //if (tmp != registers[i]) { err += $"Счётчик {i} имеет расхождеие с ККТ {registers[i]} != {tmp}\n"; }//заполнение ошибки несоотвествия регистров
                 }
                 catch (Exception)
                 {
                     Console.WriteLine("Не удолось получить доступ к регистру №" + i + "");
                 }
             }
-            Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + "");     //логирование
+            Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex+"\n" + err);           //логирование
         }
 
-        public void RequestCounters(ushort startIndex = 1, ushort endIndex = 0)        //запрос значений всех счётчиков / начиная с индекса / в диапозоне [startIndex,endIndex)
+        public void RequestCounters(ushort startIndex = 1, ushort endIndex = 0)         //запрос значений всех счётчиков / начиная с индекса / в диапозоне [startIndex,endIndex)
         {
-            endIndex = endIndex > 0 ? endIndex : (ushort)23;
+            endIndex = endIndex > 0 ? endIndex : (ushort)23;                                                            //проверка конечного значения если 0, то до конца
+            string err="";                                                                                              //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
             {
                 try
                 {
-                    ecrCtrl.Info.GetCounter(i);
+                    int tmp = ecrCtrl.Info.GetCounter(i);
+                    if(tmp!= counters[i]) { err += $"Счётчик {i} имеет расхождеие с ККТ {counters[i]} != {tmp}\n"; }    //Зполнение ошибки несоотвествия счётчиков
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Не удолось получить доступ к счётчику №" + i + "");
+                    Console.WriteLine("Не удолось получить доступ к счётчику №" + i + "");                              //ошибка доступа к регистру
                 }
             }
-            Console.WriteLine("Запрошены данные с счётчиков с " + startIndex + " по " + endIndex + "");     //логирование
+            Console.WriteLine("Запрошены данные с счётчиков с " + startIndex + " по " + endIndex + "\n"+err);           //логирование
         }
 
-        public void getRegisters()      //запрос значений всех регистров / начиная с индекса / в диапозоне [startIndex,endIndex) 
+        public void getRegisters()                                                      //считывание значений всех регистров в переменные
         {
             ushort endIndex = 236;
             ushort startIndex = 1;
@@ -241,7 +245,7 @@ namespace FWAutoTestUtility
             {
                 try
                 {
-                    registers[i] = ecrCtrl.Info.GetRegister(i);
+                    registers[i] = ecrCtrl.Info.GetRegister(i);             //запрос значений регистров из ККТ
                 }
                 catch (Exception)
                 {
@@ -251,7 +255,7 @@ namespace FWAutoTestUtility
             Console.WriteLine("Запрошены данные с регистров получены");     //логирование
         }
 
-        public void GetCounters()        //запрос значений всех счётчиков / начиная с индекса / в диапозоне [startIndex,endIndex)
+        public void GetCounters()                                                       //считывание значений всех счётчиков в переменные
         {
             ushort endIndex = 23;
             ushort startIndex = 1;
@@ -259,14 +263,14 @@ namespace FWAutoTestUtility
             {
                 try
                 {
-                    counters[i] = ecrCtrl.Info.GetCounter(i);
+                    counters[i] = ecrCtrl.Info.GetCounter(i);               //запрос значений регистров из ККТ
                 }
                 catch (Exception)
                 {
                     Console.WriteLine("Не удолось получить доступ к счётчику №" + i + " за стартовое значение принят 0");
                 }
             }
-            Console.WriteLine("Данные с счётчиков получены");     //логирование
+            Console.WriteLine("Данные с счётчиков получены");               //логирование
         }
     }
 }
