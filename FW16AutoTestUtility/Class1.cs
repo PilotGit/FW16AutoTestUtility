@@ -7,12 +7,14 @@ namespace FWAutoTestUtility
 {
     class Class1
     {
-        public EcrCtrl ecrCtrl;                 //подключение к ККТ
-        public int[] counters = new int[23];    //массив счётчиков
-        public decimal[] registers = new int[236];  //массив регистров
-        string nameOerator = "test program";    //имя касира 
-        decimal[] coasts = new decimal[] { 200m, 200.37m };
-        decimal[] counts = new decimal[] { 1m, 5m, 0.39m, 1.73m };
+        public EcrCtrl ecrCtrl;                                     //подключение к ККТ
+        public int[] counters = new int[23];                        //массив счётчиков
+        public decimal[] registers = new decimal[236];              //массив регистров
+        public int[] countersTmp = new int[23];                     //массив счётчиков
+        public decimal[] registersTmp = new decimal[236];           //массив регистров
+        string nameOerator = "test program";                        //имя касира 
+        decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
+        decimal[] counts = new decimal[] { 1m, 5m, 0.17m, 1.73m };  //варианты колличества
 
         public Class1()
         {
@@ -106,21 +108,25 @@ namespace FWAutoTestUtility
                         Code = (Native.CmdExecutor.TenderCode)(i % 7)
                     };
                     document.AddTender(tender);
+
                 }
                 document.PrintText("Тестовый текст теста текстовго нефиксального документа");
                 if (abort)
                 {
                     ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);
+                    Console.WriteLine("Оформлен нефиксальный документ типа " + (Native.CmdExecutor.NFDocType)nfdType + "");
+                    counters[nfdType + 8 + 11]++;
                 }
                 else
                 {
                     document.Complete(Native.CmdExecutor.DocEndMode.Default);                                                                //закрытие нефиксального документа
+                    Console.WriteLine("Оформлен нефиксальный документ типа " + (Native.CmdExecutor.NFDocType)nfdType + "");
+                    counters[nfdType + 8]++;
                 }
-                Console.WriteLine("Оформлен нефиксальный документ типа " + (Native.CmdExecutor.NFDocType)nfdType + "");
             }
         }
 
-        private void TestCorrection(bool abort=false)
+        private void TestCorrection(bool abort = false)
         {
             for (int ReceptKind = 1; ReceptKind < 4; ReceptKind += 2)
             {
@@ -139,12 +145,15 @@ namespace FWAutoTestUtility
                 if (abort)
                 {
                     ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);
+                    Console.WriteLine("Отменён чек коррекции типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");         //логирование
+                    counters[ReceptKind + 4 + 11]++;
                 }
                 else
                 {
-                    document.Complete();                                                                //закрытие нефиксального документа
-                }                                                            //закрытие чека корректировки
-                Console.WriteLine("Оформлен чек коррекции типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");         //логирование
+                    document.Complete();                                                                //закрытие чека коррекции
+                    Console.WriteLine("Оформлен чек коррекции типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");         //логирование
+                    counters[ReceptKind + 4]++;
+                }
             }
         }
 
@@ -164,6 +173,7 @@ namespace FWAutoTestUtility
                     //создание товара
                     receiptEntry = document.NewItemCosted(i.ToString(), "tovar " + i, counts[i / 12], (Native.CmdExecutor.VatCodeType)((i / 2 % 6) + 1), coasts[i % 2]);
                     document.AddEntry(receiptEntry);                                                //добавления товара в чек
+
                     //textBox1.Text += "Добавлен " + "tovar " + i + "";
                 }
                 decimal balance = Math.Round(document.Total / 8, 2);                                //Сумма разделённая на количество типов оплаты.
@@ -173,20 +183,23 @@ namespace FWAutoTestUtility
                 }
                 balance = document.Total - document.TotalaPaid;                                     //вычисление остатка суммы для оплаты 
                 document.AddPayment((Native.CmdExecutor.TenderCode)0, balance);                     //оплата наличнми
-                RequestRegisters(160, 181);                                                         //запрос регистров по открытому документу
                 if (abort)
                 {
                     document.Abort();                                                               //отмена документа
+                    Console.WriteLine("Отменён чек типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");     //логирование
+                    counters[ReceptKind + 11]++;
                 }
                 else
                 {
-                    document.Complete();                                                            //закрытие нефиксального документа
+                    document.Complete();                                                            //закрытие чека
+                    Console.WriteLine("Оформлен чек типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");     //логирование
+                    counters[ReceptKind]++;
                 }
-                Console.WriteLine("Оформлен чек типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");     //логирование
+                RequestRegisters(160, 181);                                                         //запрос регистров по открытому документу
             }
         }
 
-        public void RequestRegisters(ushort startIndex = 0, ushort endIndex = 0)      //запрос значений всех регистров / начиная с индекса / в диапозоне [startIndex,endIndex) 
+        public void RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)      //запрос значений всех регистров / начиная с индекса / в диапозоне [startIndex,endIndex) 
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)236;
             for (ushort i = startIndex; i < endIndex; i++)
@@ -220,14 +233,15 @@ namespace FWAutoTestUtility
             Console.WriteLine("Запрошены данные с счётчиков с " + startIndex + " по " + endIndex + "");     //логирование
         }
 
-        public void getRegisters(ushort startIndex = 0, ushort endIndex = 0)      //запрос значений всех регистров / начиная с индекса / в диапозоне [startIndex,endIndex) 
+        public void getRegisters()      //запрос значений всех регистров / начиная с индекса / в диапозоне [startIndex,endIndex) 
         {
-            endIndex = endIndex > 0 ? endIndex : (ushort)236;
+            ushort endIndex = 236;
+            ushort startIndex = 1;
             for (ushort i = startIndex; i < endIndex; i++)
             {
                 try
                 {
-                    registers[i]= ecrCtrl.Info.GetRegister(i);
+                    registers[i] = ecrCtrl.Info.GetRegister(i);
                 }
                 catch (Exception)
                 {
