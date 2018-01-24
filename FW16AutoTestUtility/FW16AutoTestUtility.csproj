@@ -33,7 +33,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Fw16">
-      <HintPath>..\..\..\fw16_AutoTest\FW16AutoTestProgram\FW16AutoTestProgram\Fw16.dll</HintPath>
+      <HintPath>Fw16.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
