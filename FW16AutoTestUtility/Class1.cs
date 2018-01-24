@@ -10,8 +10,7 @@ namespace FWAutoTestUtility
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
         public int[] counters = new int[23];                        //массив счётчиков
         public decimal[] registers = new decimal[236];              //массив регистров
-        public int[] countersTmp = new int[23];                     //массив счётчиков
-        public decimal[] registersTmp = new decimal[236];           //массив регистров
+        public decimal[] registersTmp = new decimal[236];           //массив временных регистров
         string nameOerator = "test program";                        //имя касира 
         decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
         decimal[] counts = new decimal[] { 1m, 5m, 0.17m, 1.73m };  //варианты колличества
@@ -85,7 +84,8 @@ namespace FWAutoTestUtility
             TestCorrection();                               //вызов функции тестирования чека коррекции
             TestNonFiscal();                                //вызов функции нефискального документа
             TestReceipt(true);                              //вызов функции тестирования чека c отменой
-            //TestCorrection(true);                           //вызов функции тестирования чека коррекции с отменой
+            //TestCorrection(true);                         //вызов функции тестирования чека коррекции с отменой
+            //отключено в связи с тем что чек коррекции не возможно отменить, потому что он отправляется одним пакетом.
             TestNonFiscal(true);                            //вызов функции нефискального документа с отменой
             ecrCtrl.Shift.Close(nameOerator);               //закрытие смены этого теста
 
@@ -174,15 +174,36 @@ namespace FWAutoTestUtility
                     receiptEntry = document.NewItemCosted(i.ToString(), "tovar " + i, counts[i / 12], (Native.CmdExecutor.VatCodeType)((i / 2 % 6) + 1), coasts[i % 2]);
                     document.AddEntry(receiptEntry);                                                        //добавления товара в чек
 
-                    //textBox1.Text += "Добавлен " + "tovar " + i + "";
+                    registersTmp[(ReceptKind - 1) * 10 + (int)receiptEntry.VatCode - 1 + 120] += receiptEntry.Cost;     //сумма по ставкам НДС
+                    if ((int)receiptEntry.VatCode != 3 && (int)receiptEntry.VatCode != 4)                               
+                        registersTmp[(ReceptKind - 1) * 10 + (int)receiptEntry.VatCode > 4 ? (int)receiptEntry.VatCode - 2 : (int)receiptEntry.VatCode + 120 + 5] += receiptEntry.VatAmount;    //сумма НДС 
+
+                    registersTmp[160] += receiptEntry.Cost;                                         //Сумма открытого документа; рассчитывается по стоимости тваров
+                    registersTmp[(int)receiptEntry.VatCode + 160] += receiptEntry.Cost;             //Сумма открытого документа по ставкам НДС
+                    if ((int)receiptEntry.VatCode != 3 && (int)receiptEntry.VatCode != 4)
+                        registersTmp[(int)receiptEntry.VatCode > 4 ? (int)receiptEntry.VatCode - 2 : (int)receiptEntry.VatCode + 160 + 6] += receiptEntry.VatAmount; //сумма НДС открытого документа
+                    registersTmp[171]++;                                                                    //Количество товарных позиций
+
+
                 }
-                decimal balance = Math.Round(document.Total / 8, 2);                                        //Сумма разделённая на количество типов оплаты.
-                for (int i = 7; i > 0; i--)
+                decimal balance = Math.Round(document.Total / 8m, 2);                                       //Сумма разделённая на количество типов оплаты.
+                for (int tenderCode = 1; tenderCode < 7; tenderCode++)
                 {
-                    Math.Round(document.AddPayment((Native.CmdExecutor.TenderCode)i, balance));             //оплата всеми способами кроме нала
+                    document.AddPayment((Native.CmdExecutor.TenderCode)tenderCode, balance);                //оплата всеми способами кроме нала
+
+                    registersTmp[ReceptKind] += balance;                                                    //сумма 
+                    registersTmp[ReceptKind * 10 + 1 + tenderCode] += balance;                              //сумма по номеру платежа
+                    registersTmp[ReceptKind * 10 + 1 + 8] += balance;                                       //сумма электрооного типа платежа
+
+                    registersTmp[tenderCode + 172] += balance;                                              //сумма чека по номеру платежа
+                    registersTmp[181] += balance;                                                           //сумма чека электронного типа платежа
                 }
                 balance = document.Total - document.TotalaPaid;                                             //вычисление остатка суммы для оплаты 
                 document.AddPayment((Native.CmdExecutor.TenderCode)0, balance);                             //оплата наличнми
+
+                registersTmp[ReceptKind] += balance;                                                           //сумма прихода
+                registersTmp[ReceptKind * 10 + 1 + 0] += balance;                                              //сумма прихода по номеру платежа
+
                 if (abort)
                 {
                     document.Abort();                                                                       //отмена документа
@@ -208,33 +229,33 @@ namespace FWAutoTestUtility
                 try
                 {
                     decimal tmp = ecrCtrl.Info.GetRegister(i);
-                    //if (tmp != registers[i]) { err += $"Счётчик {i} имеет расхождеие с ККТ {registers[i]} != {tmp}\n"; }//заполнение ошибки несоотвествия регистров
+                    if (tmp != registers[i]) { err += $"Счётчик {i} имеет расхождеие с ККТ {registers[i]} != {tmp}\n"; }//заполнение ошибки несоотвествия регистров
                 }
                 catch (Exception)
                 {
                     Console.WriteLine("Не удолось получить доступ к регистру №" + i + "");
                 }
             }
-            Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex+"\n" + err);           //логирование
+            Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + "\n" + err);           //логирование
         }
 
         public void RequestCounters(ushort startIndex = 1, ushort endIndex = 0)         //запрос значений всех счётчиков / начиная с индекса / в диапозоне [startIndex,endIndex)
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)23;                                                            //проверка конечного значения если 0, то до конца
-            string err="";                                                                                              //строка ошибки заполняемая при несоответсвии регистров
+            string err = "";                                                                                              //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
             {
                 try
                 {
                     int tmp = ecrCtrl.Info.GetCounter(i);
-                    if(tmp!= counters[i]) { err += $"Счётчик {i} имеет расхождеие с ККТ {counters[i]} != {tmp}\n"; }    //Зполнение ошибки несоотвествия счётчиков
+                    if (tmp != counters[i]) { err += $"Счётчик {i} имеет расхождеие с ККТ {counters[i]} != {tmp}\n"; }    //Зполнение ошибки несоотвествия счётчиков
                 }
                 catch (Exception)
                 {
                     Console.WriteLine("Не удолось получить доступ к счётчику №" + i + "");                              //ошибка доступа к регистру
                 }
             }
-            Console.WriteLine("Запрошены данные с счётчиков с " + startIndex + " по " + endIndex + "\n"+err);           //логирование
+            Console.WriteLine("Запрошены данные с счётчиков с " + startIndex + " по " + endIndex + "\n" + err);           //логирование
         }
 
         public void getRegisters()                                                      //считывание значений всех регистров в переменные
