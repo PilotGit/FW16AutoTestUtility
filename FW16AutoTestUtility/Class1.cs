@@ -8,11 +8,29 @@ namespace FWAutoTestUtility
 {
     class Class1
     {
+        /// <summary>
+        /// Количество цен
+        /// </summary>
         const int countCoasts = 2;
+        /// <summary>
+        /// Количество вариантов количеств
+        /// </summary>
         const int countCounts = 6;
+        /// <summary>
+        /// Количество типов оплаты
+        /// </summary>
         const int countPaymentKind = 6;
+        /// <summary>
+        /// Количество типов чеков
+        /// </summary>
         const int countReceiptKind = 4;
+        /// <summary>
+        /// Количество типов оплаты
+        /// </summary>
         const int countTenderCode = 7;
+        /// <summary>
+        /// Количество ставок НДС
+        /// </summary>
         const int countVatCode = 6;
 
 
@@ -24,20 +42,7 @@ namespace FWAutoTestUtility
         decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
         decimal[] counts = new decimal[] { 1m, 5m, 0.17m, 1.73m };  //варианты колличества
 
-        private Dictionary<Native.CmdExecutor.VatCodeType, int> vatCode;
-        private Dictionary<VatCode, int> vatCode2;
-        private Dictionary<ItemPaymentKind, int> paymentKind;
-        private Dictionary<ReceiptKind, int> receiptKind;
-
-        enum MyEnum
-        {
-
-        }
-
-        public Class1()
-        {
-            ecrCtrl = new EcrCtrl();
-            vatCode = new Dictionary<Native.CmdExecutor.VatCodeType, int>() {
+        private Dictionary<Native.CmdExecutor.VatCodeType, int> vatCode = new Dictionary<Native.CmdExecutor.VatCodeType, int>() {
                 { Native.CmdExecutor.VatCodeType.Vat18,1 },
                 { Native.CmdExecutor.VatCodeType.Vat10,2 },
                 { Native.CmdExecutor.VatCodeType.Vat0,3 },
@@ -45,15 +50,15 @@ namespace FWAutoTestUtility
                 { Native.CmdExecutor.VatCodeType.Vat18Included,5 },
                 { Native.CmdExecutor.VatCodeType.Vat10Included,6 },
             };
-            vatCode2 = new Dictionary<VatCode, int>() {
-                { Fw16.Model.VatCode.Vat18,1 },
-                { Fw16.Model.VatCode.Vat10,2 },
-                { Fw16.Model.VatCode.Vat0,3 },
-                { Fw16.Model.VatCode.NoVat,4 },
-                { Fw16.Model.VatCode.Vat18Included,5 },
-                { Fw16.Model.VatCode.Vat10Included,6 },
+        private Dictionary<VatCode, int> vatCode2 = new Dictionary<VatCode, int>() {
+                { VatCode.Vat18,1 },
+                { VatCode.Vat10,2 },
+                { VatCode.Vat0,3 },
+                { VatCode.NoVat,4 },
+                { VatCode.Vat18Included,5 },
+                { VatCode.Vat10Included,6 },
             };
-            paymentKind = new Dictionary<Fw16.Model.ItemPaymentKind, int>
+        private Dictionary<ItemPaymentKind, int> paymentKind = new Dictionary<Fw16.Model.ItemPaymentKind, int>
             {
                 {ItemPaymentKind.Prepay,0 },
                 {ItemPaymentKind.PartlyPrepay,1 },
@@ -63,13 +68,26 @@ namespace FWAutoTestUtility
                 {ItemPaymentKind.LoanCredit,5 },
                 {ItemPaymentKind.PayCredit,6 }
             };
-            receiptKind = new Dictionary<ReceiptKind, int>
+        private Dictionary<ReceiptKind, int> receiptKind = new Dictionary<ReceiptKind, int>
             {
                 {ReceiptKind.Income,1 },
                 {ReceiptKind.IncomeBack,2 },
                 {ReceiptKind.Outcome,3 },
                 {ReceiptKind.OutcomeBack,4}
             };
+        private Dictionary<Native.CmdExecutor.TenderType, int> tenderType = new Dictionary<Native.CmdExecutor.TenderType, int>
+            {
+                {Native.CmdExecutor.TenderType.Cash,0 },
+                {Native.CmdExecutor.TenderType.NonCash,1 },
+                {Native.CmdExecutor.TenderType.Advance,2 },
+                {Native.CmdExecutor.TenderType.Credit,3 },
+                {Native.CmdExecutor.TenderType.Barter,4 }
+            };
+        private Dictionary<Native.CmdExecutor.TenderCode, int> tenderCodeType;
+
+        public Class1()
+        {
+            ecrCtrl = new EcrCtrl();
             ConnectToFW();
             BeginTest();
         }
@@ -114,16 +132,23 @@ namespace FWAutoTestUtility
             SimpleTest();
         }
 
-        public void Preparation()                                                                        //Функция подготовки к тестам
+        public void Preparation()                                                                                   //Функция подготовки к тестам
         {
-            ecrCtrl.Service.SetParameter(Native.CmdExecutor.ParameterCode.AbortDocFontSize, "51515");    //отключение печати чека
+            ecrCtrl.Service.SetParameter(Native.CmdExecutor.ParameterCode.AbortDocFontSize, "51515");               //отключение печати чека
             if ((ecrCtrl.Info.Status & Fw16.Ecr.GeneralStatus.DocOpened) > 0)
             {
-                ecrCtrl.Service.AbortDoc();                                                             //закрыть документ если открыт
+                ecrCtrl.Service.AbortDoc();                                                                         //закрыть документ если открыт
             }
             if ((ecrCtrl.Info.Status & Fw16.Ecr.GeneralStatus.ShiftOpened) > 0)
             {
-                ecrCtrl.Shift.Close(nameOerator);                                                       //закрыть смену если открыта
+                ecrCtrl.Shift.Close(nameOerator);                                                                   //закрыть смену если открыта
+            }
+            tenderCodeType = new Dictionary<Native.CmdExecutor.TenderCode, int>();
+            var tenderList = ecrCtrl.Info.GetTendersList().GetEnumerator();                                         //получение коллекции соответствий кода платежа типу платежа
+            for (int i = 0; i < countTenderCode; i++)
+            {
+                tenderList.MoveNext();                                                                              //перебор коллекции
+                tenderCodeType.Add((Native.CmdExecutor.TenderCode)i, tenderType[tenderList.Current.Mode]);          //создание соответствия кода платежа типу 
             }
         }
 
@@ -132,10 +157,10 @@ namespace FWAutoTestUtility
             ecrCtrl.Shift.Open(nameOerator);                //открытие смены для этого теста
             GetRegisters();
             GetCounters();
-            TestReceipt();                                  //вызов функции тестирования чека
-            //TestCorrection();                               //вызов функции тестирования чека коррекции
+            //TestReceipt();                                  //вызов функции тестирования чека
+            TestCorrection();                               //вызов функции тестирования чека коррекции
             //TestNonFiscal();                                //вызов функции нефискального документа
-            TestReceipt(true);                              //вызов функции тестирования чека c отменой
+            //TestReceipt(true);                              //вызов функции тестирования чека c отменой
             //TestCorrection(true);                         //вызов функции тестирования чека коррекции с отменой
             //отключено в связи с тем что чек коррекции не возможно отменить, потому что он отправляется одним пакетом.
             //TestNonFiscal(true);                            //вызов функции нефискального документа с отменой
@@ -180,40 +205,37 @@ namespace FWAutoTestUtility
 
         private void TestCorrection(bool abort = false)
         {
-            for (int ReceptKind = 1; ReceptKind < 4; ReceptKind += 2)
+            for (int receiptKind = 1; receiptKind < 4; receiptKind += 2)
             {
-                var document = ecrCtrl.Shift.BeginCorrection(nameOerator, (ReceiptKind)ReceptKind);
+                var document = ecrCtrl.Shift.BeginCorrection(nameOerator, (ReceiptKind)receiptKind);
+                SetValue(registersTmp, 0);
                 decimal sum = 0;
 
-                decimal[] registersTmp = new decimal[236];           //массив временных регистров
-
-                for (int i = 0; i < 7; i++)                                                                             //перебор возврата средств всеми способами, целове и дробная суммы
+                for (int i = 0; i < countCoasts * countTenderCode; i++)                                                                             //перебор возврата средств всеми способами, целове и дробная суммы
                 {
-                    document.AddTender((Native.CmdExecutor.TenderCode)(i / 2), coasts[i % 2]);
-                    sum += coasts[i % 2];
+                    AddTender(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)(i / countCoasts % countTenderCode), coasts[i % countCoasts]);
+                    sum += coasts[i % countCoasts];
                 }
-                for (int i = 1; i < 6; i++)                                                                             //перебор налоговых ставок
+                decimal sumPaid = 0m;
+                for (ushort i = 1; i < countVatCode; i++)                                                                             //перебор налоговых ставок
                 {
-                    document.AddAmount((VatCode)(i), Math.Round(sum / 6m, 2));
-
-                    registersTmp[(ReceptKind == 3 ? 10 : 0) + i + 60] += Math.Round(sum / 6m, 2);     //сумма по ставкам НДС
-                    if (i != 3 && i != 4)
-                        registersTmp[(ReceptKind - 1) * 10 + (i > 4 ? i - 2 : i) + 120 + 5] += Math.Round(sum / 6m, 2);    //сумма НДС 
+                    sumPaid = Math.Round(sum / (countVatCode - i), 2);
+                    AddAmount(document, (ReceiptKind)receiptKind, (VatCode)i, sumPaid);
+                    sum = sum - sumPaid;
 
                 }
-                document.AddAmount(Fw16.Model.VatCode.NoVat, sum - Math.Round(sum / 6, 2) * 5);
                 if (abort)
                 {
                     ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);
-                    Console.WriteLine("Отменён чек коррекции типа " + (ReceiptKind)ReceptKind + "");         //логирование
-                    counters[ReceptKind + 4 + 11]++;
+                    Console.WriteLine("Отменён чек коррекции типа " + (ReceiptKind)receiptKind + "");         //логирование
+                    counters[receiptKind + 4 + 11]++;
                 }
                 else
                 {
-                    registers[ReceptKind + 4] += sum;
                     document.Complete();                                                                                //закрытие чека коррекции
-                    Console.WriteLine("Оформлен чек коррекции типа " + (ReceiptKind)ReceptKind + "");        //логирование
-                    counters[ReceptKind + 4]++;
+                    Console.WriteLine("Оформлен чек коррекции типа " + (ReceiptKind)receiptKind + "");        //логирование
+                    counters[receiptKind + 4]++;
+                    AddRegistersTmp();
                 }
             }
         }
@@ -233,10 +255,9 @@ namespace FWAutoTestUtility
                 bool coast = true;
                 for (int i = 0; i < (countCounts * countVatCode * countCoasts * countPaymentKind); i++)
                 {
-                    /*4 - количество, 6-ставок ндс, 2- цены, 7 - типов оплаты(1-6) */
-                    AddEntry(document, (ReceiptKind)receiptKind, "Tovar" + i, counts[i / countVatCode / countCoasts / countPaymentKind%countCounts], (Native.CmdExecutor.VatCodeType)((i / countCoasts / countPaymentKind % countVatCode) + 1), coast, coasts[i / countPaymentKind % countCoasts], (ItemPaymentKind)((i % countPaymentKind) + 1));  //создание товара
+                    AddEntry(document, (ReceiptKind)receiptKind, "Tovar" + i, counts[i / countVatCode / countCoasts / countPaymentKind % countCounts], (Native.CmdExecutor.VatCodeType)((i / countCoasts / countPaymentKind % countVatCode) + 1), coast, coasts[i / countPaymentKind % countCoasts], (ItemPaymentKind)((i % countPaymentKind) + 1));  //создание товара
                 }
-                decimal sum = 0m;                                                       //Сумма разделённая на количество типов оплаты.
+                decimal sum = 0m;
                 for (int tenderCode = 1; tenderCode < countTenderCode; tenderCode++)
                 {
                     sum = Math.Round(document.Total / 9 - tenderCode, 2);
@@ -248,19 +269,20 @@ namespace FWAutoTestUtility
                 //
                 if (abort)
                 {
-                    document.Abort();                                                                       //отмена документа
-                    Console.WriteLine("Отменён чек типа " + (ReceiptKind)receiptKind + "");       //логирование
-                    counters[receiptKind + 11]++;                                                            //увеличение счётчика отмены соотвествующего типа чека
+                    document.Abort();                                                                           //отмена документа
+                    Console.WriteLine("Отменён чек типа " + (ReceiptKind)receiptKind + "");                     //логирование
+                    counters[receiptKind + 11]++;                                                               //увеличение счётчика (12-15) отмены соотвествующего типа чека
 
                 }
                 else
                 {
-                    document.Complete();                                                                    //закрытие чека
-                    Console.WriteLine("Оформлен чек типа " + (ReceiptKind)receiptKind + "");      //логирование
-                    counters[receiptKind]++;                                                                 //учеличение счётчика оформленного соответсвющего типа чека
-                    AddRegistersTmp(registersTmp);
+                    document.Complete();                                                                        //закрытие чека
+                    Console.WriteLine("Оформлен чек типа " + (ReceiptKind)receiptKind + "");                    //логирование
+                    counters[receiptKind]++;                                                                    //учеличение счётчика (1-4) оформленного соответсвющего типа чека
+                    SetValue(registers, 0, 160, 182);
+                    AddRegistersTmp();
                 }
-                RequestRegisters(160, 182);                                                                 //запрос регистров по открытому документу
+                RequestRegisters(160, 182);                                                                     //запрос регистров по открытому документу
             }
         }
 
@@ -338,18 +360,17 @@ namespace FWAutoTestUtility
             Console.WriteLine("Данные с счётчиков получены");               //логирование
         }
 
-        public void AddRegistersTmp(decimal[] registersTmp)                             //функция применения временных регистров к конечным
+        public void AddRegistersTmp()                                                   //функция применения временных регистров к конечным
         {
             ushort endIndex = 236;
             ushort startIndex = 1;
-            SetValue(registers, 0, 160, 182);
             for (int i = startIndex; i < endIndex; i++)
             {
                 registers[i] += registersTmp[i];                                        //применение временного массива к конечному
             }
         }
 
-        void SetValue(decimal[] arr, decimal value, ushort startIndex = 0, ushort endIndex = 0)      //устаовка значений для переданного массива
+        void SetValue(decimal[] arr, decimal value, ushort startIndex = 0, ushort endIndex = 0)      //установка значений для переданного массива
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)arr.Length;
             for (int i = startIndex; i < endIndex; i++)
@@ -411,6 +432,29 @@ namespace FWAutoTestUtility
             else registersTmp[180] += sum;                                                          //добавление в регистр (180) суммы открытого документа наличного типа платежа
 
             registersTmp[this.receiptKind[receiptKind] + 190] += sum;                               //добавление в регистры (191-194) накопительный регистр по типу операции
+        }
+
+        void AddTender(Fw16.Ecr.Correction document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        {
+            document.AddTender(tenderCode, sum);
+            registersTmp[tenderCodeType[tenderCode] + this.receiptKind[receiptKind] * 10 + 41] += sum;                                                                                    //добавление в регистры (51-55,71-75) суммы по типу платежа
+            registersTmp[this.receiptKind[receiptKind] + 4] += sum;
+        }
+
+        void AddAmount(Fw16.Ecr.Correction document, ReceiptKind receiptKind, VatCode vatCode, decimal sum)
+        {
+            document.AddAmount(vatCode, sum);
+
+            registersTmp[(this.receiptKind[receiptKind] == 3 ? 10 : 0) + this.vatCode2[vatCode] + 60] += sum;                                                                       //добавление в регистры (60-65,80-85) суммы по ставкам НДС
+            switch (this.vatCode2[vatCode])
+            {
+                case 1: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum * 18m / 118m); break;                                     //добавление в регистры (66,86) суммы НДС
+                case 5: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum / 11m); break;                                            //добавление в регистры (68,88) суммы НДС
+                case 2: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum * 18m / 118m); break;                                 //добавление в регистры (67,87) суммы НДС
+                case 6: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum / 11m); break;                                        //добавление в регистры (69,89) суммы НДС
+                default:
+                    break;
+            }
         }
     }
 }
