@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Fw16;
+using Fw16.Model;
 
 namespace FWAutoTestUtility
 {
@@ -10,11 +11,14 @@ namespace FWAutoTestUtility
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
         public int[] counters = new int[23];                        //массив счётчиков
         public decimal[] registers = new decimal[236];              //массив регистров
+        decimal[] registersTmp = new decimal[236];           //массив временных регистров
         string nameOerator = "test program";                        //имя касира 
         decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
         decimal[] counts = new decimal[] { 1m, 5m, 0.17m, 1.73m };  //варианты колличества
         Dictionary<Native.CmdExecutor.VatCodeType, int> vatCode;
         Dictionary<Fw16.Model.VatCode, int> vatCode2;
+        private Dictionary<ItemPaymentKind, int> paymentKind;
+        private Dictionary<ReceiptKind, int> receiptKind;
 
         enum MyEnum
         {
@@ -40,7 +44,24 @@ namespace FWAutoTestUtility
                 { Fw16.Model.VatCode.Vat18Included,5 },
                 { Fw16.Model.VatCode.Vat10Included,6 },
             };
-            vatCode[receiptEntry.VatCode]
+            paymentKind = new Dictionary<Fw16.Model.ItemPaymentKind, int>
+            {
+                {ItemPaymentKind.Prepay,0 },
+{ItemPaymentKind.PartlyPrepay,1 },
+{ItemPaymentKind.Advance,2 },
+{ItemPaymentKind.Payoff,3 },
+{ItemPaymentKind.PartlyLoanCredit,4 },
+{ItemPaymentKind.LoanCredit,5 },
+{ItemPaymentKind.PayCredit,6 }
+            };
+            receiptKind = new Dictionary<ReceiptKind, int>
+            {
+                {ReceiptKind.Income,1 },
+                {ReceiptKind.IncomeBack,2 },
+                {ReceiptKind.Outcome,3 },
+                { ReceiptKind.OutcomeBack,4}
+            };
+
             ConnectToFW();
             BeginTest();
         }
@@ -200,18 +221,18 @@ namespace FWAutoTestUtility
                     SenderAddress = "ewq@qwe.yyy"                   //адрес отправтеля
                 });
                 SetValue(registers, 0, 160, 182);
-                decimal[] registersTmp = new decimal[236];           //массив временных регистров
                 Fw16.Ecr.ReceiptEntry receiptEntry;
-                for (int i = 0; i < 48; i++)
+                for (int i = 0; i < (4*6*2*7); i++)
                 {
+                    /*4 - количество, 6-ставок ндс, 2- цены, 7 - типов оплаты(1-7) */
                     //создание товара
-                    receiptEntry = document.NewItemCosted(i.ToString(), "tovar " + i, counts[i / 12], (Native.CmdExecutor.VatCodeType)((i / 2 % 6) + 1), coasts[i % 2]);
-                    
+                    receiptEntry = document.NewItemCosted(i.ToString(), "tovar " + i, counts[i / 6/2/7], (Native.CmdExecutor.VatCodeType)((i / 2/7 % 6) + 1), coasts[i/7 % 2]);
+                    receiptEntry.PaymentKind = (ItemPaymentKind)((i%7)+1);
                     document.AddEntry(receiptEntry);                                                        //добавления товара в чек
-
                     registersTmp[(ReceptKind - 1) * 10 + vatCode[receiptEntry.VatCode] - 1 + 120] += receiptEntry.Cost;     //сумма по ставкам НДС
                     if (vatCode[receiptEntry.VatCode] != 3 && vatCode[receiptEntry.VatCode] != 4)
                         registersTmp[(ReceptKind - 1) * 10 + (vatCode[receiptEntry.VatCode] > 4 ? vatCode[receiptEntry.VatCode] - 2 : vatCode[receiptEntry.VatCode]) + 120 + 5] += receiptEntry.VatAmount;    //сумма НДС 
+                    registersTmp[ReceptKind * 10 + paymentKind[receiptEntry.PaymentKind] + 190] += receiptEntry.Cost; //сумма по способу рассчёта 
 
                     registersTmp[160] += receiptEntry.Cost;                                                 //Сумма открытого документа; рассчитывается по стоимости тваров
                     registersTmp[vatCode[receiptEntry.VatCode] + 160] += receiptEntry.Cost;                     //Сумма открытого документа по ставкам НДС
@@ -357,6 +378,39 @@ namespace FWAutoTestUtility
                 arr[i] = value;
             }
         }
-    }
 
+
+        /// <summary>
+        /// Создаёт и добавляет товар в чек. Записывает суммы во временный регистр.
+        /// </summary>
+        /// <param name="document">Чек в который необходимо добавить товар</param>
+        /// <param name="receiptKind">Тип чека (Приход, Отмена прихода..)</param>
+        /// <param name="name">Название товара</param>
+        /// <param name="count">Количество товара</param>
+        /// <param name="vatCode">Тип налоговой ставки</param>
+        /// <param name="coast">true - параметр money - стоимость, false - цена </param>
+        /// <param name="money">Сумма</param>
+        /// <param name="paymentKind">Способ рассчёта (Предоплата, полная оплата, кредит..)</param>
+        /// <param name="kind">Тип добавляемого товара (товар,услуга..)</param>
+        void AddEntry(Fw16.Ecr.Receipt document,ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, bool coast, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
+        {
+            Fw16.Ecr.ReceiptEntry receiptEntry;                                                                                 //товар
+            if (coast) receiptEntry = document.NewItemCosted(new Random().Next().ToString(), name, count, vatCode, money);      //создание по стоимости
+            else receiptEntry = document.NewItemPriced(new Random().Next().ToString(), name,vatCode, money,  count);            //создание по цене
+            receiptEntry.PaymentKind = paymentKind;                                                                             //спооб рассчёта
+            receiptEntry.Kind = kind;                                                                                           //тип добавляемого товара
+            document.AddEntry(receiptEntry);                                                                                    //добавления товара в чек
+
+            registersTmp[(this.receiptKind[receiptKind] - 1) * 10 + this.vatCode[vatCode] - 1 + 120] += receiptEntry.Cost;      //добаление в регистр (120-125,130-135,140-145,150-155) суммы по ставке НДС
+            if (this.vatCode[vatCode] != 3 && this.vatCode[vatCode] != 4)                                                       //проверка на нулевые ставки НДС
+                registersTmp[(this.receiptKind[receiptKind] - 1) * 10 + (this.vatCode[vatCode] > 4 ? this.vatCode[vatCode] - 2 : this.vatCode[vatCode]) + 120 + 5] += receiptEntry.VatAmount;    //добавление в регистр (126-129,136-139,146-149,156-159) суммы НДС 
+            registersTmp[this.receiptKind[receiptKind] * 10 + this.paymentKind[paymentKind] + 190] += receiptEntry.Cost;        //добавление в регистр (20-206, 210-216, 220-226, 230-236) суммы по способу рассчёта 
+
+            registersTmp[160] += receiptEntry.Cost;                                                                             //добавление в регистр (160) суммы открытого документа
+            registersTmp[this.vatCode[vatCode] + 160] += receiptEntry.Cost;                                                     //добавление в регситр (161-166) сумма открытого документа по ставкам НДС
+            if (this.vatCode[vatCode] != 3 && this.vatCode[vatCode] != 4)
+                registersTmp[(this.vatCode[vatCode] > 4 ? this.vatCode[vatCode] - 2 : this.vatCode[vatCode]) + 160 + 6] += receiptEntry.VatAmount;                                               //добавление в регситр (167-170) суммы НДС открытого документа 
+            registersTmp[171]++;                                                                                                //Добавление в регситр (171)  количество товарных позиций
+        }
+    }
 }
