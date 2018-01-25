@@ -8,6 +8,14 @@ namespace FWAutoTestUtility
 {
     class Class1
     {
+        const int countCoasts = 2;
+        const int countCounts = 6;
+        const int countPaymentKind = 6;
+        const int countReceiptKind = 4;
+        const int countTenderCode = 7;
+        const int countVatCode = 6;
+
+
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
         public int[] counters = new int[23];                        //массив счётчиков
         public decimal[] registers = new decimal[236];              //массив регистров
@@ -15,15 +23,15 @@ namespace FWAutoTestUtility
         string nameOerator = "test program";                        //имя касира 
         decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
         decimal[] counts = new decimal[] { 1m, 5m, 0.17m, 1.73m };  //варианты колличества
-        Dictionary<Native.CmdExecutor.VatCodeType, int> vatCode;
-        Dictionary<Fw16.Model.VatCode, int> vatCode2;
+
+        private Dictionary<Native.CmdExecutor.VatCodeType, int> vatCode;
+        private Dictionary<VatCode, int> vatCode2;
         private Dictionary<ItemPaymentKind, int> paymentKind;
         private Dictionary<ReceiptKind, int> receiptKind;
-        private Dictionary<Native.CmdExecutor.TenderCode, int> tenderCode;
 
         enum MyEnum
         {
-            
+
         }
 
         public Class1()
@@ -37,7 +45,7 @@ namespace FWAutoTestUtility
                 { Native.CmdExecutor.VatCodeType.Vat18Included,5 },
                 { Native.CmdExecutor.VatCodeType.Vat10Included,6 },
             };
-            vatCode2 = new Dictionary<Fw16.Model.VatCode, int>() {
+            vatCode2 = new Dictionary<VatCode, int>() {
                 { Fw16.Model.VatCode.Vat18,1 },
                 { Fw16.Model.VatCode.Vat10,2 },
                 { Fw16.Model.VatCode.Vat0,3 },
@@ -48,23 +56,19 @@ namespace FWAutoTestUtility
             paymentKind = new Dictionary<Fw16.Model.ItemPaymentKind, int>
             {
                 {ItemPaymentKind.Prepay,0 },
-{ItemPaymentKind.PartlyPrepay,1 },
-{ItemPaymentKind.Advance,2 },
-{ItemPaymentKind.Payoff,3 },
-{ItemPaymentKind.PartlyLoanCredit,4 },
-{ItemPaymentKind.LoanCredit,5 },
-{ItemPaymentKind.PayCredit,6 }
+                {ItemPaymentKind.PartlyPrepay,1 },
+                {ItemPaymentKind.Advance,2 },
+                {ItemPaymentKind.Payoff,3 },
+                {ItemPaymentKind.PartlyLoanCredit,4 },
+                {ItemPaymentKind.LoanCredit,5 },
+                {ItemPaymentKind.PayCredit,6 }
             };
             receiptKind = new Dictionary<ReceiptKind, int>
             {
                 {ReceiptKind.Income,1 },
                 {ReceiptKind.IncomeBack,2 },
                 {ReceiptKind.Outcome,3 },
-                { ReceiptKind.OutcomeBack,4}
-            };
-            tenderCode = new Dictionary<Native.CmdExecutor.TenderCode, int>
-            {
-                {Native.CmdExecutor.TenderCode.Cash, 0 }
+                {ReceiptKind.OutcomeBack,4}
             };
             ConnectToFW();
             BeginTest();
@@ -178,7 +182,7 @@ namespace FWAutoTestUtility
         {
             for (int ReceptKind = 1; ReceptKind < 4; ReceptKind += 2)
             {
-                var document = ecrCtrl.Shift.BeginCorrection(nameOerator, (Fw16.Model.ReceiptKind)ReceptKind);
+                var document = ecrCtrl.Shift.BeginCorrection(nameOerator, (ReceiptKind)ReceptKind);
                 decimal sum = 0;
 
                 decimal[] registersTmp = new decimal[236];           //массив временных регистров
@@ -190,9 +194,9 @@ namespace FWAutoTestUtility
                 }
                 for (int i = 1; i < 6; i++)                                                                             //перебор налоговых ставок
                 {
-                    document.AddAmount((Fw16.Model.VatCode)(i), Math.Round(sum / 6m, 2));
+                    document.AddAmount((VatCode)(i), Math.Round(sum / 6m, 2));
 
-                    registersTmp[(ReceptKind==3?10:0) + i + 60] += Math.Round(sum / 6m, 2);     //сумма по ставкам НДС
+                    registersTmp[(ReceptKind == 3 ? 10 : 0) + i + 60] += Math.Round(sum / 6m, 2);     //сумма по ставкам НДС
                     if (i != 3 && i != 4)
                         registersTmp[(ReceptKind - 1) * 10 + (i > 4 ? i - 2 : i) + 120 + 5] += Math.Round(sum / 6m, 2);    //сумма НДС 
 
@@ -201,14 +205,14 @@ namespace FWAutoTestUtility
                 if (abort)
                 {
                     ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);
-                    Console.WriteLine("Отменён чек коррекции типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");         //логирование
+                    Console.WriteLine("Отменён чек коррекции типа " + (ReceiptKind)ReceptKind + "");         //логирование
                     counters[ReceptKind + 4 + 11]++;
                 }
                 else
                 {
                     registers[ReceptKind + 4] += sum;
                     document.Complete();                                                                                //закрытие чека коррекции
-                    Console.WriteLine("Оформлен чек коррекции типа " + (Fw16.Model.ReceiptKind)ReceptKind + "");        //логирование
+                    Console.WriteLine("Оформлен чек коррекции типа " + (ReceiptKind)ReceptKind + "");        //логирование
                     counters[ReceptKind + 4]++;
                 }
             }
@@ -218,56 +222,41 @@ namespace FWAutoTestUtility
         {
             for (int receiptKind = 1; receiptKind < 5; receiptKind++)
             {
-                var document = ecrCtrl.Shift.BeginReceipt(nameOerator, (Fw16.Model.ReceiptKind)receiptKind, new
+                var document = ecrCtrl.Shift.BeginReceipt(nameOerator, (ReceiptKind)receiptKind, new
                 {
                     Taxation = Fs.Native.TaxationType.Agro,         //налогообложение по умолчанию
                     CustomerAddress = "qwe@ewq.xxx",                //адрес получателя
                     SenderAddress = "ewq@qwe.yyy"                   //адрес отправтеля
                 });
                 SetValue(registers, 0, 160, 182);
-                Fw16.Ecr.ReceiptEntry receiptEntry;
+                SetValue(registersTmp, 0);
                 bool coast = true;
-                for (int i = 0; i < (4*6*2*7); i++)
+                for (int i = 0; i < (countCounts * countVatCode * countCoasts * countPaymentKind); i++)
                 {
-                    /*4 - количество, 6-ставок ндс, 2- цены, 7 - типов оплаты(1-7) */
-                    AddEntry(document, (ReceiptKind)receiptKind, "Tovar" + i, counts[i / 6 / 2 / 7], (Native.CmdExecutor.VatCodeType)((i / 2 / 7 % 6) + 1), coast, coasts[i / 7 % 2], (ItemPaymentKind)((i % 7) + 1));  //создание товара
+                    /*4 - количество, 6-ставок ндс, 2- цены, 7 - типов оплаты(1-6) */
+                    AddEntry(document, (ReceiptKind)receiptKind, "Tovar" + i, counts[i / countVatCode / countCoasts / countPaymentKind%countCounts], (Native.CmdExecutor.VatCodeType)((i / countCoasts / countPaymentKind % countVatCode) + 1), coast, coasts[i / countPaymentKind % countCoasts], (ItemPaymentKind)((i % countPaymentKind) + 1));  //создание товара
                 }
-                decimal balance = Math.Round(document.Total / 8m, 2);                                       //Сумма разделённая на количество типов оплаты.
-                for (int tenderCode = 1; tenderCode < 7; tenderCode++)
+                decimal sum = 0m;                                                       //Сумма разделённая на количество типов оплаты.
+                for (int tenderCode = 1; tenderCode < countTenderCode; tenderCode++)
                 {
-                    document.AddPayment((Native.CmdExecutor.TenderCode)tenderCode, balance);                //оплата всеми способами кроме нала
-
-                    registersTmp[receiptKind] += balance;                                                    //сумма по типу операции
-                    registersTmp[receiptKind * 10 + 1 + tenderCode] += balance;                              //сумма по номеру платежа
-                    registersTmp[receiptKind * 10 + 1 + 8] += balance;                                       //сумма электрооного типа платежа
-
-                    registersTmp[tenderCode + 172] += balance;                                              //сумма открытого документа по номеру платежа
-                    registersTmp[181] += balance;                                                           //сумма открытого документа электронного типа платежа
-
-                    registersTmp[receiptKind + 190] += balance;                                              //накопительный регистр по типу операции
+                    sum = Math.Round(document.Total / 9 - tenderCode, 2);
+                    sum += (decimal)(new Random().Next(-1 * (int)sum * (5 / 100), (int)sum * (5 / 100)));
+                    AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, sum);
+                    sum = document.Total - document.TotalaPaid;
                 }
-                balance = document.Total - document.TotalaPaid;                                             //вычисление остатка суммы для оплаты 
-                document.AddPayment((Native.CmdExecutor.TenderCode)0, balance);                             //оплата наличнми
-
-                registersTmp[receiptKind] += balance;                                                        //сумма прихода
-                registersTmp[receiptKind * 10 + 1 + 0] += balance;                                           //сумма прихода по номеру платежа
-
-                registersTmp[0 + 172] += balance;                                                           //сумма открытого документа по номеру платежа 0
-                registersTmp[180] += balance;                                                               //сумма открытого документа наличного типа платежа
-
-                registersTmp[receiptKind + 190] += balance;                                                  //накопительный регистр по типу операции
-                
+                AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum);
+                //
                 if (abort)
                 {
                     document.Abort();                                                                       //отмена документа
-                    Console.WriteLine("Отменён чек типа " + (Fw16.Model.ReceiptKind)receiptKind + "");       //логирование
+                    Console.WriteLine("Отменён чек типа " + (ReceiptKind)receiptKind + "");       //логирование
                     counters[receiptKind + 11]++;                                                            //увеличение счётчика отмены соотвествующего типа чека
 
                 }
                 else
                 {
                     document.Complete();                                                                    //закрытие чека
-                    Console.WriteLine("Оформлен чек типа " + (Fw16.Model.ReceiptKind)receiptKind + "");      //логирование
+                    Console.WriteLine("Оформлен чек типа " + (ReceiptKind)receiptKind + "");      //логирование
                     counters[receiptKind]++;                                                                 //учеличение счётчика оформленного соответсвющего типа чека
                     AddRegistersTmp(registersTmp);
                 }
@@ -360,7 +349,7 @@ namespace FWAutoTestUtility
             }
         }
 
-        void SetValue(decimal[] arr,decimal value, ushort startIndex=0, ushort endIndex=0)      //устаовка значений для переданного массива
+        void SetValue(decimal[] arr, decimal value, ushort startIndex = 0, ushort endIndex = 0)      //устаовка значений для переданного массива
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)arr.Length;
             for (int i = startIndex; i < endIndex; i++)
@@ -368,7 +357,7 @@ namespace FWAutoTestUtility
                 arr[i] = value;
             }
         }
-        
+
         /// <summary>
         /// Создаёт и добавляет товар в чек. Записывает суммы во временный регистр.
         /// </summary>
@@ -381,11 +370,11 @@ namespace FWAutoTestUtility
         /// <param name="money">Сумма</param>
         /// <param name="paymentKind">Способ рассчёта (Предоплата, полная оплата, кредит..)</param>
         /// <param name="kind">Тип добавляемого товара (товар,услуга..)</param>
-        void AddEntry(Fw16.Ecr.Receipt document,ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, bool coast, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
+        void AddEntry(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, bool coast, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
         {
             Fw16.Ecr.ReceiptEntry receiptEntry;                                                                                 //товар
-            if (coast) receiptEntry = document.NewItemCosted(new Random().Next().ToString(), name, count, vatCode, money);      //создание по стоимости
-            else receiptEntry = document.NewItemPriced(new Random().Next().ToString(), name,vatCode, money,  count);            //создание по цене
+            if (coast) receiptEntry = document.NewItemCosted(name, name, count, vatCode, money);      //создание по стоимости
+            else receiptEntry = document.NewItemPriced(new Random().Next().ToString(), name, vatCode, money, count);            //создание по цене
             receiptEntry.PaymentKind = paymentKind;                                                                             //спооб рассчёта
             receiptEntry.Kind = kind;                                                                                           //тип добавляемого товара
             document.AddEntry(receiptEntry);                                                                                    //добавления товара в чек
@@ -418,7 +407,7 @@ namespace FWAutoTestUtility
             registersTmp[this.receiptKind[receiptKind] * 10 + 1 + 8] += sum;                        //добавление в регистры (19, 29, 39, 49) суммы электрооного типа платежа
 
             registersTmp[(int)tenderCode + 172] += sum;                                             //добавление в регистры (172-179) суммы открытого документа по номеру платежа
-            if (tenderCode!= Native.CmdExecutor.TenderCode.Cash)registersTmp[181] += sum;           //добавление в регистр (181) суммы открытого документа электронного типа платежа
+            if (tenderCode != Native.CmdExecutor.TenderCode.Cash) registersTmp[181] += sum;           //добавление в регистр (181) суммы открытого документа электронного типа платежа
             else registersTmp[180] += sum;                                                          //добавление в регистр (180) суммы открытого документа наличного типа платежа
 
             registersTmp[this.receiptKind[receiptKind] + 190] += sum;                               //добавление в регистры (191-194) накопительный регистр по типу операции
