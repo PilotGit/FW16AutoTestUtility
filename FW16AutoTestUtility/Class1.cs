@@ -15,7 +15,7 @@ namespace FWAutoTestUtility
         /// <summary>
         /// Количество вариантов количеств
         /// </summary>
-        const int countCounts = 6;
+        const int countCounts = 4;
         /// <summary>
         /// Количество типов оплаты
         /// </summary>
@@ -27,7 +27,7 @@ namespace FWAutoTestUtility
         /// <summary>
         /// Количество типов оплаты
         /// </summary>
-        const int countTenderCode = 7;
+        const int countTenderCode = 8;
         /// <summary>
         /// Количество ставок НДС
         /// </summary>
@@ -37,7 +37,7 @@ namespace FWAutoTestUtility
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
         public int[] counters = new int[23];                        //массив счётчиков
         public decimal[] registers = new decimal[236];              //массив регистров
-        decimal[] registersTmp = new decimal[236];           //массив временных регистров
+        decimal[] registersTmp = new decimal[236];                  //массив временных регистров
         string nameOerator = "test program";                        //имя касира 
         decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
         decimal[] counts = new decimal[] { 1m, 5m, 0.17m, 1.73m };  //варианты колличества
@@ -175,7 +175,7 @@ namespace FWAutoTestUtility
         /// <summary>
         /// Подготовка к корректному выполнению тестов. Отключение печати, отмена всех документов, закрытие смен, получение соответствий номера платежа к типу платежа.
         /// </summary>
-        public void Preparation()                                                                                   //Функция подготовки к тестам
+        public void Preparation()
         {
             ecrCtrl.Service.SetParameter(Native.CmdExecutor.ParameterCode.AbortDocFontSize, "51515");               //отключение печати чека
             if ((ecrCtrl.Info.Status & Fw16.Ecr.GeneralStatus.DocOpened) > 0)
@@ -201,11 +201,9 @@ namespace FWAutoTestUtility
             GetRegisters();
             GetCounters();
             //TestReceipt();                                  //вызов функции тестирования чека
-            TestCorrection();                               //вызов функции тестирования чека коррекции
-            //TestNonFiscal();                                //вызов функции нефискального документа
-            //TestReceipt(true);                              //вызов функции тестирования чека c отменой
-            //TestCorrection(true);                         //вызов функции тестирования чека коррекции с отменой
-            //отключено в связи с тем что чек коррекции не возможно отменить, потому что он отправляется одним пакетом.
+            //TestCorrection();                               //вызов функции тестирования чека коррекции
+            TestNonFiscal();                                //вызов функции нефискального документа
+            //TestReceipt(true);                              //вызов функции тестирования чека c отменой.
             //TestNonFiscal(true);                            //вызов функции нефискального документа с отменой
             ecrCtrl.Shift.Close(nameOerator);               //закрытие смены этого теста
 
@@ -213,26 +211,30 @@ namespace FWAutoTestUtility
             RequestCounters();
 
             Console.WriteLine("Завершено тестирование SimpleTest ");     //логирование
+
+            //TestCorrection(true);                         //вызов функции тестирования чека коррекции с отменой
+            //отключено в связи с тем что чек коррекции не возможно отменить, потому что он отправляется одним пакетом
         }
 
         /// <summary>
         /// Тест нефискального документа
         /// </summary>
         /// <param name="abort">Отменить создание нефискального документа</param>
-        private void TestNonFiscal(bool abort = false)                                              //тест нефискального документа
+        private void TestNonFiscal(bool abort = false)
         {
             for (int nfdType = 1; nfdType < 4; nfdType++)                                           //Перебор типов нефиксальных документов
             {
                 var document = ecrCtrl.Shift.BeginNonFiscal((Native.CmdExecutor.NFDocType)nfdType); //открытие нефиксального документа
-                for (int i = 0; i < 14 && nfdType != 3; i++)                                         //
+                SetValue(registersTmp, 0);
+                for (int i = 0; i < countCoasts*countTenderCode && nfdType != 3; i++)                                         //
                 {
                     var tender = new Tender
                     {
                         Amount = coasts[i / 7],
                         Code = (Native.CmdExecutor.TenderCode)(i % 7)
                     };
-                    document.AddTender(tender);
-                    AddTender(document, (Native.CmdExecutor.NFDocType)nfdType, (Native.CmdExecutor.TenderCode)(i % 7), coasts[i / 7]);
+                    //document.AddTender(tender);
+                    AddTender(document, (Native.CmdExecutor.NFDocType)nfdType, (Native.CmdExecutor.TenderCode)(i / countCoasts % countTenderCode), coasts[i %countCoasts]);
                 }
                 document.PrintText("Тестовый текст теста текстовго нефиксального документа");
                 if (abort)
@@ -263,19 +265,19 @@ namespace FWAutoTestUtility
                 SetValue(registersTmp, 0);
                 decimal sum = 0;
 
-                for (int i = 0; i < countCoasts * countTenderCode; i++)                                                                             //перебор возврата средств всеми способами, целове и дробная суммы
+                for (int i = 0; i < countCoasts * countTenderCode; i++)         //перебор возврата средств всеми способами, целове и дробная суммы
                 {
                     AddTender(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)(i / countCoasts % countTenderCode), coasts[i % countCoasts]);
                     sum += coasts[i % countCoasts];
                 }
                 decimal sumPaid = 0m;
-                for (ushort i = 1; i < countVatCode; i++)                                                                             //перебор налоговых ставок
+                for (ushort i = 1; i <= countVatCode; i++)                      //перебор налоговых ставок
                 {
-                    sumPaid = Math.Round(sum / (countVatCode - i), 2);
+                    sumPaid = Math.Round(sum / ((countVatCode+1) - i), 2);
                     AddAmount(document, (ReceiptKind)receiptKind, (VatCode)i, sumPaid);
                     sum = sum - sumPaid;
-
                 }
+
                 if (abort)
                 {
                     ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);
@@ -311,7 +313,15 @@ namespace FWAutoTestUtility
                 bool coast = true;
                 for (int i = 0; i < (countCounts * countVatCode * countCoasts * countPaymentKind); i++)
                 {
-                    AddEntry(document, (ReceiptKind)receiptKind, "Tovar" + i, counts[i / countVatCode / countCoasts / countPaymentKind % countCounts], (Native.CmdExecutor.VatCodeType)((i / countCoasts / countPaymentKind % countVatCode) + 1), coast, coasts[i / countPaymentKind % countCoasts], (ItemPaymentKind)((i % countPaymentKind) + 1));  //создание товара
+
+                    AddEntry(document,
+                        (ReceiptKind)receiptKind,
+                        "Tovar" + i.ToString(),
+                        counts[i / countVatCode / countCoasts / countPaymentKind % countCounts],
+                        (Native.CmdExecutor.VatCodeType)((i / countCoasts / countPaymentKind % countVatCode) + 1),
+                        coast,
+                        coasts[i / countPaymentKind % countCoasts],
+                        (ItemPaymentKind)((i % countPaymentKind) + 1));  //создание товара
                 }
                 decimal sum = 0m;
                 for (int tenderCode = 1; tenderCode < countTenderCode; tenderCode++)
@@ -347,23 +357,25 @@ namespace FWAutoTestUtility
         /// </summary>
         /// <param name="startIndex">Начальный индекс</param>
         /// <param name="endIndex">Конечный индекс, не включительно</param>
-        public void RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)        //запрос значений всех регистров / начиная с индекса / в диапозоне [startIndex,endIndex) 
+        public void RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
-            string err = "";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
+            string err = $"+-------+------------------+-------------------+\n" +
+                $"|   #   |       test       |        ККТ        |\n" +
+                $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
             {
                 try
                 {
                     decimal tmp = ecrCtrl.Info.GetRegister(i);
-                    if (tmp != registers[i]) { err += $"Счётчик {i} имеет расхождеие с ККТ {registers[i]} != {tmp}\n"; }//заполнение ошибки несоотвествия регистров
+                    if (tmp != registers[i]) { err += $"|{i,7:F}|{registers[i],18:F}|{tmp,19:F}|\n"; }//заполнение ошибки несоотвествия регистров
                 }
                 catch (Exception)
                 {
                     Console.WriteLine("Не удолось получить доступ к регистру №" + i + "");
                 }
             }
-            Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + "\n" + err);           //логирование
+            Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + "\n" + ((err.Length>150)?err:""));           //логирование
         }
 
         /// <summary>
@@ -371,7 +383,7 @@ namespace FWAutoTestUtility
         /// </summary>
         /// <param name="startIndex">Начальный индекс</param>
         /// <param name="endIndex">Конечный индекс, не включительно</param>
-        public void RequestCounters(ushort startIndex = 1, ushort endIndex = 0)         //запрос значений всех счётчиков / начиная с индекса / в диапозоне [startIndex,endIndex)
+        public void RequestCounters(ushort startIndex = 1, ushort endIndex = 0)
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)23;                                                            //проверка конечного значения если 0, то до конца
             string err = "";                                                                                              //строка ошибки заполняемая при несоответсвии регистров
@@ -393,7 +405,7 @@ namespace FWAutoTestUtility
         /// <summary>
         /// считывает все регистры в массив регистров
         /// </summary>
-        public void GetRegisters()                                                      //считывание значений всех регистров в переменные
+        public void GetRegisters()
         {
             ushort endIndex = 236;
             ushort startIndex = 1;
@@ -414,7 +426,7 @@ namespace FWAutoTestUtility
         /// <summary>
         /// Считывает все счтчики в массив счётчиков
         /// </summary>
-        public void GetCounters()                                                       //считывание значений всех счётчиков в переменные
+        public void GetCounters() 
         {
             ushort endIndex = 23;
             ushort startIndex = 1;
@@ -435,7 +447,7 @@ namespace FWAutoTestUtility
         /// <summary>
         /// Применяет изменения врменного регистра в основной
         /// </summary>
-        public void AddRegistersTmp()                                                                   //функция применения временных регистров к конечным
+        public void AddRegistersTmp()
         {
             ushort endIndex = 236;
             ushort startIndex = 1;
@@ -452,7 +464,7 @@ namespace FWAutoTestUtility
         /// <param name="value">Значение</param>
         /// <param name="startIndex">Индекс с которого надо заполнять массив значениям</param>
         /// <param name="endIndex">Конечный индекс заполнения, не включается</param>
-        void SetValue(decimal[] arr, decimal value, ushort startIndex = 0, ushort endIndex = 0)         //установка значений для переданного массива
+        void SetValue(decimal[] arr, decimal value, ushort startIndex = 0, ushort endIndex = 0)
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)arr.Length;
             for (int i = startIndex; i < endIndex; i++)
@@ -543,10 +555,10 @@ namespace FWAutoTestUtility
         /// Добавление суммы по типу оплаты.
         /// </summary>
         /// <param name="document">Нефискальный документ</param>
-        /// <param name="nFDocType">Тип нефискального документа</param>
+        /// <param name="nfDocType">Тип нефискального документа</param>
         /// <param name="tenderCode">Тип оплаты</param>
         /// <param name="sum">Сумма</param>
-        void AddTender(Fw16.Ecr.NonFiscalBase document, Native.CmdExecutor.NFDocType nFDocType, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        void AddTender(Fw16.Ecr.NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
             var tender = new Tender
             {
@@ -555,8 +567,9 @@ namespace FWAutoTestUtility
             };
             document.AddTender(tender);
 
-            registersTmp[(int)tenderCode +this.nfDocType[nFDocType]*10+ 81] += sum;                                                                                     //добавление в регистры (91-98,101-108) суммы по номеру платежа
-            if(this.tenderCodeType[tenderCode]==this.tenderType[Native.CmdExecutor.TenderType.NonCash])registersTmp[this.nfDocType[nFDocType] * 10 + 89] += sum;        //добавление в регистры (99,109) суммы электронных типов платежей
+            registersTmp[this.nfDocType[nfDocType] + 8] += sum;                                                                                                         //добавление в регистры (9,10) суммы по типу нефискального документа
+            registersTmp[(int)tenderCode +this.nfDocType[nfDocType]*10+ 81] += sum;                                                                                     //добавление в регистры (91-98,101-108) суммы по номеру платежа
+            if(this.tenderCodeType[tenderCode]==this.tenderType[Native.CmdExecutor.TenderType.NonCash])registersTmp[this.nfDocType[nfDocType] * 10 + 89] += sum;        //добавление в регистры (99,109) суммы электронных типов платежей
         }
 
         /// <summary>
@@ -570,13 +583,13 @@ namespace FWAutoTestUtility
         {
             document.AddAmount(vatCode, sum);
 
-            registersTmp[this.receiptKind[receiptKind]*10 + this.vatCode2[vatCode] + 50] += sum;                                                                                            //добавление в регистры (60-65,80-85) суммы по ставкам НДС
+            registersTmp[this.receiptKind[receiptKind]*10 + this.vatCode2[vatCode] + 50] += sum;                                                                    //добавление в регистры (60-65,80-85) суммы по ставкам НДС
             switch (this.vatCode2[vatCode])
             {
-                case 1: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum * 18m / 118m); break;                                      //добавление в регистры (66,86) суммы НДС
-                case 5: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum *10m/ 110m); break;                                        //добавление в регистры (68,88) суммы НДС
-                case 2: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum * 18m / 118m); break;                                  //добавление в регистры (67,87) суммы НДС
-                case 6: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum * 10m/ 110m); break;                                   //добавление в регистры (69,89) суммы НДС
+                case 1: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum * 18m / 118m,2); break;            //добавление в регистры (66,86) суммы НДС
+                case 5: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum *10m/ 110m,2); break;              //добавление в регистры (68,88) суммы НДС
+                case 2: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum * 18m / 118m,2); break;        //добавление в регистры (67,87) суммы НДС
+                case 6: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum * 10m/ 110m,2); break;         //добавление в регистры (69,89) суммы НДС
                 default:
                     break;
             }
