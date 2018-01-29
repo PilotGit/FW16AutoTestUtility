@@ -4,7 +4,7 @@ using System.Text;
 using Fw16;
 using Fw16.Model;
 
-namespace FWAutoTestUtility
+namespace FW16AutoTestUtility
 {
     class Class1
     {
@@ -33,7 +33,7 @@ namespace FWAutoTestUtility
         /// </summary>
         const int countVatCode = 6;
 
-
+        Class2 infs = null;
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
         public int[] counters = new int[23];                        //массив счётчиков
         public decimal[] registers = new decimal[236];              //массив регистров
@@ -46,46 +46,8 @@ namespace FWAutoTestUtility
 
         public Class1()
         {
-            ecrCtrl = new EcrCtrl();
-            ConnectToFW();
+            infs = new Class2(out ecrCtrl,ref registersTmp);
             BeginTest();
-        }
-
-        /// <summary>
-        /// Подключение к ККТ
-        /// </summary>
-        /// <param name="serialPort">Порт по покотору производится поключение к ККТ</param>
-        /// <param name="baudRate">Частота подключения</param>
-        void ConnectToFW(int serialPort = 1, int baudRate = 57600)
-        {
-            try
-            {
-                ecrCtrl.Init(serialPort, baudRate);             //Подключчение по порту и частоте
-                ShowInformation();
-            }
-            catch (EcrException excep)
-            {
-                ecrCtrl.Reconnect();                            //Переподключение в случае попытки повторного подключения
-                System.Diagnostics.Debug.Write(excep.Message);
-            }
-            catch (System.IO.IOException excep)
-            {
-                Console.WriteLine(excep.Message);                 //вывод ошибки неверного порта
-            }
-            catch (System.UnauthorizedAccessException excep)
-            {
-                Console.WriteLine(excep.Message);                 //вывод ошибки доступа порта
-            }
-
-        }
-
-        void ShowInformation()
-        {
-            Console.WriteLine("ККТ: подключено");
-            Console.WriteLine("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild);
-            Console.WriteLine("Код firmware: " + ecrCtrl.Info.FactoryInfo.FwType);
-            Console.WriteLine("Серийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id);
-            Console.WriteLine("Модель: " + ecrCtrl.Info.EcrInfo.Model);
         }
 
         /// <summary>
@@ -93,7 +55,6 @@ namespace FWAutoTestUtility
         /// </summary>
         private void BeginTest()
         {
-            ConnectToFW();
             Preparation();
             SimpleTest();
         }
@@ -153,9 +114,9 @@ namespace FWAutoTestUtility
                         Code = (Native.CmdExecutor.TenderCode)(i % countTenderCode)
                     };
                     //document.AddTender(tender);
-                    
-                   AddTender(document, (Native.CmdExecutor.NFDocType)nfdType, (Native.CmdExecutor.TenderCode)(i / countCoasts % countTenderCode), coasts[i %countCoasts]);
-                }
+                   
+                   infs.AddTender(document, (Native.CmdExecutor.NFDocType)nfdType, (Native.CmdExecutor.TenderCode)(i / countCoasts % countTenderCode), coasts[i %countCoasts]);
+                } 
                 document.PrintText("Тестовый текст теста текстовго нефиксального документа");
                 if (abort)
                 {
@@ -188,14 +149,14 @@ namespace FWAutoTestUtility
 
                 for (int i = 0; i < countCoasts * countTenderCode; i++)         //перебор возврата средств всеми способами, целове и дробная суммы
                 {
-                    AddTender(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)(i / countCoasts % countTenderCode), coasts[i % countCoasts]);
+                    infs.AddTender(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)(i / countCoasts % countTenderCode), coasts[i % countCoasts]);
                     sum += coasts[i % countCoasts];
                 }
                 decimal sumPaid = 0m;
                 for (ushort i = 1; i <= countVatCode; i++)                      //перебор налоговых ставок
                 {
                     sumPaid = Math.Round(sum / ((countVatCode+1) - i), 2);
-                    AddAmount(document, (ReceiptKind)receiptKind, (VatCode)i, sumPaid);
+                    infs.AddAmount(document, (ReceiptKind)receiptKind, (VatCode)i, sumPaid);
                     sum = sum - sumPaid;
                 }
 
@@ -235,7 +196,7 @@ namespace FWAutoTestUtility
                 for (int i = 0; i < (countCounts * countVatCode * countCoasts * countPaymentKind); i++)
                 {
 
-                    AddEntry(document,
+                    infs.AddEntry(document,
                         (ReceiptKind)receiptKind,
                         "Tovar" + i.ToString(),
                         counts[i / countVatCode / countCoasts / countPaymentKind % countCounts],
@@ -249,10 +210,10 @@ namespace FWAutoTestUtility
                 {
                     sum = Math.Round(document.Total / 9 - tenderCode, 2);
                     sum += (decimal)(new Random().Next(-1 * (int)sum * (5 / 100), (int)sum * (5 / 100)));
-                    AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, sum);
+                    infs.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, sum);
                     sum = document.Total - document.TotalaPaid;
                 }
-                AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum);
+                infs.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum);
                 //
                 if (abort)
                 {

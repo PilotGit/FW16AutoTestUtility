@@ -14,30 +14,30 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Количество цен
         /// </summary>
-        private static int countCoasts = 2;
+        const int countCoasts = 2;
         /// <summary>
         /// Количество вариантов количеств
         /// </summary>
-        private static int countCounts = 4;
+        const int countCounts = 4;
         /// <summary>
         /// Количество типов оплаты
         /// </summary>
-        private static int countPaymentKind = 6;
+        const int countPaymentKind = 6;
         /// <summary>
         /// Количество типов чеков
         /// </summary>
-        private static int countReceiptKind = 4;
+        const int countReceiptKind = 4;
         /// <summary>
         /// Количество типов оплаты
         /// </summary>
-        private static int countTenderCode = 8;
+        const int countTenderCode = 8;
         /// <summary>
         /// Количество ставок НДС
         /// </summary>
-        private static int countVatCode = 6;
+        const int countVatCode = 6;
 
         public EcrCtrl ecrCtrl;
-        decimal[] registersTmp = new decimal[236];                  //массив временных регистров
+        decimal[] registersTmp;                  //массив временных регистров
 
         /// <summary>
         /// Соответствие типа НДС его номеру
@@ -115,9 +115,11 @@ namespace FW16AutoTestUtility
             {Native.CmdExecutor.NFDocType.Report,3 }
         };
 
-        public Class2(EcrCtrl ecrCtrl)
+        public Class2(out EcrCtrl  ecrCtrl, ref decimal[] registersTmp)
         {
-            this.ecrCtrl = ecrCtrl;
+            this.ecrCtrl = ecrCtrl = new EcrCtrl();
+            this.registersTmp = registersTmp;
+            ConnectToFW();
             tenderCodeType = new Dictionary<Native.CmdExecutor.TenderCode, int>();
             var tenderList = ecrCtrl.Info.GetTendersList().GetEnumerator();                                         //получение коллекции соответствий кода платежа типу платежа
             for (int i = 0; i < countTenderCode; i++)
@@ -126,6 +128,44 @@ namespace FW16AutoTestUtility
                 tenderCodeType.Add((Native.CmdExecutor.TenderCode)i, tenderType[tenderList.Current.Mode]);          //создание соответствия кода платежа типу 
             }
         }
+
+        /// <summary>
+        /// Подключение к ККТ
+        /// </summary>
+        /// <param name="serialPort">Порт по покотору производится поключение к ККТ</param>
+        /// <param name="baudRate">Частота подключения</param>
+        void ConnectToFW(int serialPort = 1, int baudRate = 57600)
+        {
+            try
+            {
+                ecrCtrl.Init(serialPort, baudRate);             //Подключчение по порту и частоте
+                ShowInformation();
+            }
+            catch (EcrException excep)
+            {
+                ecrCtrl.Reconnect();                            //Переподключение в случае попытки повторного подключения
+                System.Diagnostics.Debug.Write(excep.Message);
+            }
+            catch (System.IO.IOException excep)
+            {
+                Console.WriteLine(excep.Message);                 //вывод ошибки неверного порта
+            }
+            catch (System.UnauthorizedAccessException excep)
+            {
+                Console.WriteLine(excep.Message);                 //вывод ошибки доступа порта
+            }
+
+        }
+
+        void ShowInformation()
+        {
+            Console.WriteLine("ККТ: подключено");
+            Console.WriteLine("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild);
+            Console.WriteLine("Код firmware: " + ecrCtrl.Info.FactoryInfo.FwType);
+            Console.WriteLine("Серийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id);
+            Console.WriteLine("Модель: " + ecrCtrl.Info.EcrInfo.Model);
+        }
+
 
         /// <summary>
         /// Создаёт и добавляет товар в чек. Записывает суммы во временный регистр.
@@ -139,7 +179,7 @@ namespace FW16AutoTestUtility
         /// <param name="money">Сумма</param>
         /// <param name="paymentKind">Способ рассчёта (Предоплата, полная оплата, кредит..)</param>
         /// <param name="kind">Тип добавляемого товара (товар,услуга..)</param>
-        public static void AddEntry(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, bool coast, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
+        public void AddEntry(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, bool coast, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
         {
             Fw16.Ecr.ReceiptEntry receiptEntry;                                                                                 //товар
             if (coast) receiptEntry = document.NewItemCosted(name, name, count, vatCode, money);                                //создание по стоимости
@@ -167,7 +207,7 @@ namespace FW16AutoTestUtility
         /// <param name="receiptKind">Тип чека (Приход, Отмена прихода..)</param>
         /// <param name="tenderCode">Тип оплаты</param>
         /// <param name="sum">Сумма оплаты</param>
-        public static void AddPayment(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        public void AddPayment(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
             document.AddPayment(tenderCode, sum);                                                                                                                               //добавление оплаты 
 
@@ -198,7 +238,7 @@ namespace FW16AutoTestUtility
         /// <param name="receiptKind">Тип чека (Приход, изъятие)</param>
         /// <param name="tenderCode">Тип оплаты</param>
         /// <param name="sum">Сумма</param>
-        public static void AddTender(Fw16.Ecr.Correction document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        public void AddTender(Fw16.Ecr.Correction document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
             document.AddTender(tenderCode, sum);
             registersTmp[tenderCodeType[tenderCode] + this.receiptKind[receiptKind] * 10 + 41] += sum;                                                                                  //добавление в регистры (51-55,71-75) суммы по типу платежа
@@ -212,7 +252,7 @@ namespace FW16AutoTestUtility
         /// <param name="nfDocType">Тип нефискального документа</param>
         /// <param name="tenderCode">Тип оплаты</param>
         /// <param name="sum">Сумма</param>
-        public static void AddTender(Fw16.Ecr.NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        public void AddTender(Fw16.Ecr.NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
             var tender = new Tender
             {
@@ -236,7 +276,7 @@ namespace FW16AutoTestUtility
         /// <param name="receiptKind">Тип чека (Приход, изъятие)</param>
         /// <param name="vatCode">Ставка НДС</param>
         /// <param name="sum">Сумма</param>
-        public static void AddAmount(Fw16.Ecr.Correction document, ReceiptKind receiptKind, VatCode vatCode, decimal sum)
+        public void AddAmount(Fw16.Ecr.Correction document, ReceiptKind receiptKind, VatCode vatCode, decimal sum)
         {
             document.AddAmount(vatCode, sum);
 
