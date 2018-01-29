@@ -37,6 +37,7 @@ namespace FWAutoTestUtility
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
         public int[] counters = new int[23];                        //массив счётчиков
         public decimal[] registers = new decimal[236];              //массив регистров
+        public List<int> inaccessibleRegisters = new List<int>();
         decimal[] registersTmp = new decimal[236];                  //массив временных регистров
         string nameOerator = "test program";                        //имя касира 
         decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
@@ -200,11 +201,11 @@ namespace FWAutoTestUtility
             ecrCtrl.Shift.Open(nameOerator);                //открытие смены для этого теста
             GetRegisters();
             GetCounters();
-            //TestReceipt();                                  //вызов функции тестирования чека
-            //TestCorrection();                               //вызов функции тестирования чека коррекции
+            TestReceipt();                                  //вызов функции тестирования чека
+            TestCorrection();                               //вызов функции тестирования чека коррекции
             TestNonFiscal();                                //вызов функции нефискального документа
-            //TestReceipt(true);                              //вызов функции тестирования чека c отменой.
-            //TestNonFiscal(true);                            //вызов функции нефискального документа с отменой
+            TestReceipt(true);                              //вызов функции тестирования чека c отменой.
+            TestNonFiscal(true);                            //вызов функции нефискального документа с отменой
             ecrCtrl.Shift.Close(nameOerator);               //закрытие смены этого теста
 
             RequestRegisters();
@@ -250,6 +251,7 @@ namespace FWAutoTestUtility
                     counters[nfdType + 8]++;
                     AddRegistersTmp();
                 }
+                RequestRegisters(111, 120);
             }
         }
 
@@ -365,14 +367,17 @@ namespace FWAutoTestUtility
                 $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
             {
-                try
+                if (inaccessibleRegisters.IndexOf(i) == -1)
                 {
-                    decimal tmp = ecrCtrl.Info.GetRegister(i);
-                    if (tmp != registers[i]) { err += $"|{i,7:F}|{registers[i],18:F}|{tmp,19:F}|\n"; }//заполнение ошибки несоотвествия регистров
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine("Не удолось получить доступ к регистру №" + i + "");
+                    try
+                    {
+                        decimal tmp = ecrCtrl.Info.GetRegister(i);
+                        if (tmp != registers[i]) { err += $"|{i,7:F}|{registers[i],18:F}|{tmp,19:F}|\n"; }//заполнение ошибки несоотвествия регистров
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Не удолось получить доступ к регистру №" + i + "");
+                    }
                 }
             }
             Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + "\n" + ((err.Length>150)?err:""));           //логирование
@@ -418,6 +423,7 @@ namespace FWAutoTestUtility
                 catch (Exception)
                 {
                     Console.WriteLine("Не удолось получить доступ к регистру №" + i + " за стартовое значение принят 0");
+                    inaccessibleRegisters.Add(i);
                 }
             }
             Console.WriteLine("Запрошены данные с регистров получены");     //логирование
@@ -567,9 +573,12 @@ namespace FWAutoTestUtility
             };
             document.AddTender(tender);
 
-            registersTmp[this.nfDocType[nfDocType] + 8] += sum;                                                                                                         //добавление в регистры (9,10) суммы по типу нефискального документа
-            registersTmp[(int)tenderCode +this.nfDocType[nfDocType]*10+ 81] += sum;                                                                                     //добавление в регистры (91-98,101-108) суммы по номеру платежа
-            if(this.tenderCodeType[tenderCode]==this.tenderType[Native.CmdExecutor.TenderType.NonCash])registersTmp[this.nfDocType[nfDocType] * 10 + 89] += sum;        //добавление в регистры (99,109) суммы электронных типов платежей
+            registersTmp[this.nfDocType[nfDocType] + 8] += sum;                                                                                                                             //добавление в регистры (9,10) суммы по типу нефискального документа
+            registersTmp[(int)tenderCode +this.nfDocType[nfDocType]*10+ 81] += sum;                                                                                                         //добавление в регистры (91-98,101-108) суммы по номеру платежа
+            if(this.tenderCodeType[tenderCode]==this.tenderType[Native.CmdExecutor.TenderType.NonCash])registersTmp[this.nfDocType[nfDocType] * 10 + 89] += sum;                            //добавление в регистры (99,109) суммы электронных типов платежей
+
+            registersTmp[(int)tenderCode + 111] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum;                                                                           //добавление в регистры (111,118) суммы по номеру платежа
+            if (this.tenderCodeType[tenderCode]==this.tenderType[Native.CmdExecutor.TenderType.NonCash])registersTmp[119] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum; //добавление в регистры (119) суммы электронных типов платежей
         }
 
         /// <summary>
