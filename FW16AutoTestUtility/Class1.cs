@@ -230,8 +230,8 @@ namespace FWAutoTestUtility
                 {
                     var tender = new Tender
                     {
-                        Amount = coasts[i / 7],
-                        Code = (Native.CmdExecutor.TenderCode)(i % 7)
+                        Amount = coasts[i / countTenderCode],
+                        Code = (Native.CmdExecutor.TenderCode)(i % countTenderCode)
                     };
                     //document.AddTender(tender);
                     AddTender(document, (Native.CmdExecutor.NFDocType)nfdType, (Native.CmdExecutor.TenderCode)(i / countCoasts % countTenderCode), coasts[i %countCoasts]);
