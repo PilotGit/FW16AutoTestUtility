@@ -125,7 +125,11 @@ namespace FWAutoTestUtility
             BeginTest();
         }
 
-        //функция подключения/переподключения к ККТ
+        /// <summary>
+        /// Подключение к ККТ
+        /// </summary>
+        /// <param name="serialPort">Порт по покотору производится поключение к ККТ</param>
+        /// <param name="baudRate">Частота подключения</param>
         void ConnectToFW(int serialPort = 1, int baudRate = 57600)
         {
             try
@@ -158,6 +162,9 @@ namespace FWAutoTestUtility
             Console.WriteLine("Модель: " + ecrCtrl.Info.EcrInfo.Model);
         }
 
+        /// <summary>
+        /// Начать тест
+        /// </summary>
         private void BeginTest()
         {
             ConnectToFW();
@@ -165,6 +172,9 @@ namespace FWAutoTestUtility
             SimpleTest();
         }
 
+        /// <summary>
+        /// Подготовка к корректному выполнению тестов. Отключение печати, отмена всех документов, закрытие смен, получение соответствий номера платежа к типу платежа.
+        /// </summary>
         public void Preparation()                                                                                   //Функция подготовки к тестам
         {
             ecrCtrl.Service.SetParameter(Native.CmdExecutor.ParameterCode.AbortDocFontSize, "51515");               //отключение печати чека
@@ -205,6 +215,10 @@ namespace FWAutoTestUtility
             Console.WriteLine("Завершено тестирование SimpleTest ");     //логирование
         }
 
+        /// <summary>
+        /// Тест нефискального документа
+        /// </summary>
+        /// <param name="abort">Отменить создание нефискального документа</param>
         private void TestNonFiscal(bool abort = false)                                              //тест нефискального документа
         {
             for (int nfdType = 1; nfdType < 4; nfdType++)                                           //Перебор типов нефиксальных документов
@@ -237,6 +251,10 @@ namespace FWAutoTestUtility
             }
         }
 
+        /// <summary>
+        /// Тест чека коррекции
+        /// </summary>
+        /// <param name="abort">Отменить создание чека коррекции</param>
         private void TestCorrection(bool abort = false)
         {
             for (int receiptKind = 1; receiptKind < 4; receiptKind += 2)
@@ -274,6 +292,10 @@ namespace FWAutoTestUtility
             }
         }
 
+        /// <summary>
+        /// Тест чека    
+        /// </summary>
+        /// <param name="abort">Отменить создание чека</param>
         private void TestReceipt(bool abort = false)
         {
             for (int receiptKind = 1; receiptKind < 5; receiptKind++)
@@ -320,6 +342,11 @@ namespace FWAutoTestUtility
             }
         }
 
+        /// <summary>
+        /// Сверяет регистры с массивом регистров в указанном диапозоне
+        /// </summary>
+        /// <param name="startIndex">Начальный индекс</param>
+        /// <param name="endIndex">Конечный индекс, не включительно</param>
         public void RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)        //запрос значений всех регистров / начиная с индекса / в диапозоне [startIndex,endIndex) 
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
@@ -339,6 +366,11 @@ namespace FWAutoTestUtility
             Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + "\n" + err);           //логирование
         }
 
+        /// <summary>
+        /// Сверяет счётчики с массивом счтчиков в указанном диапозоне
+        /// </summary>
+        /// <param name="startIndex">Начальный индекс</param>
+        /// <param name="endIndex">Конечный индекс, не включительно</param>
         public void RequestCounters(ushort startIndex = 1, ushort endIndex = 0)         //запрос значений всех счётчиков / начиная с индекса / в диапозоне [startIndex,endIndex)
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)23;                                                            //проверка конечного значения если 0, то до конца
@@ -358,6 +390,9 @@ namespace FWAutoTestUtility
             Console.WriteLine("Запрошены данные с счётчиков с " + startIndex + " по " + endIndex + "\n" + err);           //логирование
         }
 
+        /// <summary>
+        /// считывает все регистры в массив регистров
+        /// </summary>
         public void GetRegisters()                                                      //считывание значений всех регистров в переменные
         {
             ushort endIndex = 236;
@@ -376,6 +411,9 @@ namespace FWAutoTestUtility
             Console.WriteLine("Запрошены данные с регистров получены");     //логирование
         }
 
+        /// <summary>
+        /// Считывает все счтчики в массив счётчиков
+        /// </summary>
         public void GetCounters()                                                       //считывание значений всех счётчиков в переменные
         {
             ushort endIndex = 23;
@@ -394,6 +432,9 @@ namespace FWAutoTestUtility
             Console.WriteLine("Данные с счётчиков получены");               //логирование
         }
 
+        /// <summary>
+        /// Применяет изменения врменного регистра в основной
+        /// </summary>
         public void AddRegistersTmp()                                                                   //функция применения временных регистров к конечным
         {
             ushort endIndex = 236;
@@ -404,6 +445,13 @@ namespace FWAutoTestUtility
             }
         }
 
+        /// <summary>
+        /// Утсановка значения  для каждого элемента или в заданном диапозоне
+        /// </summary>
+        /// <param name="arr">Массив</param>
+        /// <param name="value">Значение</param>
+        /// <param name="startIndex">Индекс с которого надо заполнять массив значениям</param>
+        /// <param name="endIndex">Конечный индекс заполнения, не включается</param>
         void SetValue(decimal[] arr, decimal value, ushort startIndex = 0, ushort endIndex = 0)         //установка значений для переданного массива
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)arr.Length;
@@ -509,7 +557,6 @@ namespace FWAutoTestUtility
 
             registersTmp[(int)tenderCode +this.nfDocType[nFDocType]*10+ 81] += sum;                                                                                     //добавление в регистры (91-98,101-108) суммы по номеру платежа
             if(this.tenderCodeType[tenderCode]==this.tenderType[Native.CmdExecutor.TenderType.NonCash])registersTmp[this.nfDocType[nFDocType] * 10 + 89] += sum;        //добавление в регистры (99,109) суммы электронных типов платежей
-
         }
 
         /// <summary>
@@ -534,6 +581,7 @@ namespace FWAutoTestUtility
                     break;
             }
         }
+
     }
 }
 /*
