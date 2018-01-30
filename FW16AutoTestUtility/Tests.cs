@@ -10,7 +10,7 @@ namespace FW16AutoTestUtility
     {
         TestingInterfaceFW16 TestingInterfaceFW16 = null;
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
-        string nameOerator = "test program";                        //имя касира 
+        string nameOperator = "test program";                        //имя касира 
         decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
         decimal[] counts = new decimal[] { 1m, 5m, 0.17m, 1.73m };  //варианты колличества
 
@@ -42,13 +42,13 @@ namespace FW16AutoTestUtility
             }
             if ((ecrCtrl.Info.Status & Fw16.Ecr.GeneralStatus.ShiftOpened) > 0)
             {
-                ecrCtrl.Shift.Close(nameOerator);                                                                   //закрыть смену если открыта
+                ecrCtrl.Shift.Close(nameOperator);                                                                   //закрыть смену если открыта
             }
         }
 
         public void SimpleTest()                            //функция прогона по всем видам чеков и чеков коррекции
         {
-            ecrCtrl.Shift.Open(nameOerator);                //открытие смены для этого теста
+            ecrCtrl.Shift.Open(nameOperator);                //открытие смены для этого теста
             TestingInterfaceFW16.GetRegisters();
             TestingInterfaceFW16.GetCounters();
             TestReceipt();                                  //вызов функции тестирования чека
@@ -56,7 +56,7 @@ namespace FW16AutoTestUtility
             TestNonFiscal();                                //вызов функции нефискального документа
             TestReceipt(true);                              //вызов функции тестирования чека c отменой.
             TestNonFiscal(true);                            //вызов функции нефискального документа с отменой
-            ecrCtrl.Shift.Close(nameOerator);               //закрытие смены этого теста
+            ecrCtrl.Shift.Close(nameOperator);               //закрытие смены этого теста
 
             TestingInterfaceFW16.RequestRegisters();
             TestingInterfaceFW16.RequestCounters();
@@ -100,7 +100,7 @@ namespace FW16AutoTestUtility
         {
             for (int receiptKind = 1; receiptKind < 4; receiptKind += 2)
             {
-                TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Correction document, nameOerator, (ReceiptKind)receiptKind);
+                TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Correction document, nameOperator, (ReceiptKind)receiptKind);
                 decimal sum = 0;
 
                 for (int i = 0; i < TestingInterfaceFW16.countCoasts * TestingInterfaceFW16.countTenderCode; i++)         //перебор возврата средств всеми способами, целове и дробная суммы
@@ -129,7 +129,7 @@ namespace FW16AutoTestUtility
         {
             for (int receiptKind = 1; receiptKind < 5; receiptKind++)
             {
-                TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOerator, (ReceiptKind)receiptKind);
+                TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, (ReceiptKind)receiptKind);
 
                 bool coast = true;
                 for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countVatCode * TestingInterfaceFW16.countCoasts * TestingInterfaceFW16.countPaymentKind); i++)
@@ -140,7 +140,7 @@ namespace FW16AutoTestUtility
                         "Tovar" + i.ToString(),
                         counts[i / TestingInterfaceFW16.countVatCode / TestingInterfaceFW16.countCoasts / TestingInterfaceFW16.countPaymentKind % TestingInterfaceFW16.countCounts],
                         (Native.CmdExecutor.VatCodeType)((i / TestingInterfaceFW16.countCoasts / TestingInterfaceFW16.countPaymentKind % TestingInterfaceFW16.countVatCode) + 1),
-                        coast,
+                        TestingInterfaceFW16.ItemBy.coast,
                         coasts[i / TestingInterfaceFW16.countPaymentKind % TestingInterfaceFW16.countCoasts],
                         (ItemPaymentKind)((i % TestingInterfaceFW16.countPaymentKind) + 1));  //создание товара
                 }

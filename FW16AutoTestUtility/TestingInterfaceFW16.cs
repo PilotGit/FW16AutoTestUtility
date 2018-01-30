@@ -43,6 +43,12 @@ namespace FW16AutoTestUtility
         public int[] counters = new int[23];                        //массив счётчиков
         public List<int> inaccessibleRegisters = new List<int>();
 
+        public enum ItemBy
+        {
+            price = 0,
+            coast = 1
+        }
+
         /// <summary>
         /// Соответствие типа НДС его номеру
         /// </summary>
@@ -240,7 +246,7 @@ namespace FW16AutoTestUtility
         /// <param name="document">чек который следует завершить</param>
         /// <param name="receiptKind">Тип чека коррекции</param>
         /// <param name="abort">Отменить документ</param>
-        public void DocumentComplete(Receipt document, ReceiptKind receiptKind, bool abort)
+        public int DocumentComplete(Receipt document, ReceiptKind receiptKind, bool abort)
         {
             if (abort)
             {
@@ -257,7 +263,7 @@ namespace FW16AutoTestUtility
                 Console.WriteLine("Оформлен чек типа " + receiptKind + "");                    //логирование
                 AddRegistersTmp();
             }
-            RequestRegisters(160, 182);
+            return RequestRegisters(160, 182);
         }
 
         /// <summary>
@@ -295,10 +301,10 @@ namespace FW16AutoTestUtility
         /// <param name="money">Сумма</param>
         /// <param name="paymentKind">Способ рассчёта (Предоплата, полная оплата, кредит..)</param>
         /// <param name="kind">Тип добавляемого товара (товар,услуга..)</param>
-        public void AddEntry(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, bool coast, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
+        public void AddEntry(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, ItemBy coast, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
         {
             Fw16.Ecr.ReceiptEntry receiptEntry;                                                                                 //товар
-            if (coast) receiptEntry = document.NewItemCosted(name, name, count, vatCode, money);                                //создание по стоимости
+            if (coast == ItemBy.coast) receiptEntry = document.NewItemCosted(name, name, count, vatCode, money);                                //создание по стоимости
             else receiptEntry = document.NewItemPriced(new Random().Next().ToString(), name, vatCode, money, count);            //создание по цене
             receiptEntry.PaymentKind = paymentKind;                                                                             //спооб рассчёта
             receiptEntry.Kind = kind;                                                                                           //тип добавляемого товара
@@ -413,7 +419,7 @@ namespace FW16AutoTestUtility
         /// </summary>
         /// <param name="startIndex">Начальный индекс</param>
         /// <param name="endIndex">Конечный индекс, не включительно</param>
-        public void RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
+        public int RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
             string err = $"+-------+------------------+-------------------+\n" +
@@ -426,7 +432,7 @@ namespace FW16AutoTestUtility
                     try
                     {
                         decimal tmp = ecrCtrl.Info.GetRegister(i);
-                        if (tmp != registers[i]) { err += $"|{i,7:F}|{registers[i],18:F}|{tmp,19:F}|\n"; }//заполнение ошибки несоотвествия регистров
+                        if (tmp != registers[i]) { err += $"|{i,7:D}|{registers[i],18:F}|{tmp,19:F}|\n"; }//заполнение ошибки несоотвествия регистров
                     }
                     catch (Exception)
                     {
@@ -435,6 +441,8 @@ namespace FW16AutoTestUtility
                 }
             }
             Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + "\n" + ((err.Length > 150) ? err : ""));           //логирование
+            if (err.Length > 150) return 1;
+            return 0;
         }
 
         /// <summary>
