@@ -10,9 +10,11 @@ namespace FW16AutoTestUtility
     {
         static void Main(string[] args)
         {
-            Class1 fw16 = new Class1();
+            Tests fw16 = new Tests();
             Console.WriteLine("(press any key)");
             Console.ReadKey();
         }
     }
 }
+
+/*я гдето всё сломал*/

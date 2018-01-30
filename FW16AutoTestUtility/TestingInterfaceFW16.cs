@@ -4,40 +4,44 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Fw16;
+using Fw16.Ecr;
 using Fw16.Model;
 
 
 namespace FW16AutoTestUtility
 {
-    class Class2
+    class TestingInterfaceFW16
     {
         /// <summary>
         /// Количество цен
         /// </summary>
-        const int countCoasts = 2;
+        public const int countCoasts = 2;
         /// <summary>
         /// Количество вариантов количеств
         /// </summary>
-        const int countCounts = 4;
+        public const int countCounts = 4;
         /// <summary>
         /// Количество типов оплаты
         /// </summary>
-        const int countPaymentKind = 6;
+        public const int countPaymentKind = 6;
         /// <summary>
         /// Количество типов чеков
         /// </summary>
-        const int countReceiptKind = 4;
+        public const int countReceiptKind = 4;
         /// <summary>
         /// Количество типов оплаты
         /// </summary>
-        const int countTenderCode = 8;
+        public const int countTenderCode = 8;
         /// <summary>
         /// Количество ставок НДС
         /// </summary>
-        const int countVatCode = 6;
+        public const int countVatCode = 6;
 
         public EcrCtrl ecrCtrl;
         decimal[] registersTmp;                  //массив временных регистров
+        public decimal[] registers = new decimal[236];              //массив регистров
+        public int[] counters = new int[23];                        //массив счётчиков
+        public List<int> inaccessibleRegisters = new List<int>();
 
         /// <summary>
         /// Соответствие типа НДС его номеру
@@ -115,10 +119,11 @@ namespace FW16AutoTestUtility
             {Native.CmdExecutor.NFDocType.Report,3 }
         };
 
-        public Class2(out EcrCtrl  ecrCtrl, ref decimal[] registersTmp)
+        public TestingInterfaceFW16(out EcrCtrl  ecrCtrl, ref decimal[] registersTmp, ref int[] counters )
         {
             this.ecrCtrl = ecrCtrl = new EcrCtrl();
             this.registersTmp = registersTmp;
+            this.counters = counters;
             ConnectToFW();
             tenderCodeType = new Dictionary<Native.CmdExecutor.TenderCode, int>();
             var tenderList = ecrCtrl.Info.GetTendersList().GetEnumerator();                                         //получение коллекции соответствий кода платежа типу платежа
@@ -166,6 +171,119 @@ namespace FW16AutoTestUtility
             Console.WriteLine("Модель: " + ecrCtrl.Info.EcrInfo.Model);
         }
 
+        /// <summary>
+        /// Открывает нефискальный документ
+        /// </summary>
+        /// <param name="document">Нефискальный документ, который следует открыть</param>
+        /// <param name="nfDocType">Тип нефискального документа</param>
+        public void StartDocument(out NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType)
+        {
+            document = ecrCtrl.Shift.BeginNonFiscal(nfDocType); //открытие нефиксального документа
+            SetValue(ref registersTmp, 0);
+        }
+
+        /// <summary>
+        /// Открывает чек коррекции
+        /// </summary>
+        /// <param name="document">Чек коррекции который следует открыть</param>
+        /// <param name="nameOerator">Имя оператора</param>
+        /// <param name="receiptKind">Тип чека коррекции</param>
+        public void StartDocument(out Correction document, string nameOerator, ReceiptKind receiptKind)
+        {
+            document = ecrCtrl.Shift.BeginCorrection(nameOerator, receiptKind);
+            SetValue(ref registersTmp, 0);
+        }
+
+        /// <summary>
+        /// Открывает чек
+        /// </summary>
+        /// <param name="document">Чек который следует открыть</param>
+        /// <param name="nameOerator">Имя оператора</param>
+        /// <param name="receiptKind">Тип чека</param>
+        public void StartDocument(out Receipt document, string nameOerator, ReceiptKind receiptKind)
+        {
+            document = ecrCtrl.Shift.BeginReceipt(nameOerator, receiptKind, new
+            {
+                Taxation = Fs.Native.TaxationType.Agro,         //налогообложение по умолчанию
+                CustomerAddress = "qwe@ewq.xxx",                //адрес получателя
+                SenderAddress = "ewq@qwe.yyy"                   //адрес отправтеля
+            });
+            SetValue(ref registers, 0, 160, 182);
+            SetValue(ref registersTmp, 0);
+        }
+
+        /// <summary>
+        /// Закрывает нефискальный документ
+        /// </summary>
+        /// <param name="document">Нефискальный документ</param>
+        /// <param name="nfDocType">Тип нефискального документа</param>
+        /// <param name="abort">Отмена чека</param>
+        public void DocumentComplete(NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, bool abort)
+        {
+            if (abort)
+            {
+                ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);                                            //отмена нефискального документа
+                Console.WriteLine("Отменён нефиксальный документ типа " + nfDocType + "");      //логирование
+                counters[this.nfDocType[nfDocType] + 8 + 11]++;
+            }
+            else
+            {
+                document.Complete(Native.CmdExecutor.DocEndMode.Default);                                                   //закрытие нефиксального документа
+                Console.WriteLine("Оформлен нефиксальный документ типа " + nfDocType + "");     //логирование
+                counters[this.nfDocType[nfDocType] + 8]++;
+                AddRegistersTmp();
+            }
+            RequestRegisters(111, 120);
+        }
+
+        /// <summary>
+        /// Заверает чек
+        /// </summary>
+        /// <param name="document">чек который следует завершить</param>
+        /// <param name="receiptKind">Тип чека коррекции</param>
+        /// <param name="abort">Отменить документ</param>
+        public void DocumentComplete(Receipt document, ReceiptKind receiptKind, bool abort)
+        {
+            if (abort)
+            {
+                document.Abort();                                                                           //отмена документа
+                Console.WriteLine("Отменён чек типа " + receiptKind + "");                     //логирование
+                counters[this.receiptKind[receiptKind] + 11]++;                                                               //увеличение счётчика (12-15) отмены соотвествующего типа чека
+
+            }
+            else
+            {
+                document.Complete();                                                                        //закрытие чека
+                counters[this.receiptKind[receiptKind]]++;                                                                    //учеличение счётчика (1-4) оформленного соответсвющего типа чека
+                SetValue(ref registers, 0, 160, 182);
+                Console.WriteLine("Оформлен чек типа " + receiptKind + "");                    //логирование
+                AddRegistersTmp();
+            }
+            RequestRegisters(160, 182);
+        }
+
+        /// <summary>
+        /// Заверает чек коррекции
+        /// </summary>
+        /// <param name="document">Документ который следует завершить</param>
+        /// <param name="receiptKind">Тип чека коррекции</param>
+        /// <param name="abort">Отменить документ</param>
+        public void DocumentComplete(Correction document, ReceiptKind receiptKind, bool abort)
+        {
+            if (abort)
+            {
+                ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);
+                Console.WriteLine("Отменён чек коррекции типа " + receiptKind + "");         //логирование
+                counters[this.receiptKind[receiptKind] + 4 + 11]++;
+            }
+            else
+            {
+                document.Complete();                                                                                //закрытие чека коррекции
+                Console.WriteLine("Оформлен чек коррекции типа " + receiptKind + "");        //логирование
+                counters[this.receiptKind[receiptKind] + 4]++;
+                AddRegistersTmp();
+            }
+        }
 
         /// <summary>
         /// Создаёт и добавляет товар в чек. Записывает суммы во временный регистр.
@@ -291,5 +409,131 @@ namespace FW16AutoTestUtility
                     break;
             }
         }
+
+        /// <summary>
+        /// Сверяет регистры с массивом регистров в указанном диапозоне
+        /// </summary>
+        /// <param name="startIndex">Начальный индекс</param>
+        /// <param name="endIndex">Конечный индекс, не включительно</param>
+        public void RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
+        {
+            endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
+            string err = $"+-------+------------------+-------------------+\n" +
+                $"|   #   |       test       |        ККТ        |\n" +
+                $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
+            for (ushort i = startIndex; i < endIndex; i++)
+            {
+                if (inaccessibleRegisters.IndexOf(i) == -1)
+                {
+                    try
+                    {
+                        decimal tmp = ecrCtrl.Info.GetRegister(i);
+                        if (tmp != registers[i]) { err += $"|{i,7:F}|{registers[i],18:F}|{tmp,19:F}|\n"; }//заполнение ошибки несоотвествия регистров
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Не удолось получить доступ к регистру №" + i + "");
+                    }
+                }
+            }
+            Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + "\n" + ((err.Length > 150) ? err : ""));           //логирование
+        }
+
+        /// <summary>
+        /// Сверяет счётчики с массивом счтчиков в указанном диапозоне
+        /// </summary>
+        /// <param name="startIndex">Начальный индекс</param>
+        /// <param name="endIndex">Конечный индекс, не включительно</param>
+        public void RequestCounters(ushort startIndex = 1, ushort endIndex = 0)
+        {
+            endIndex = endIndex > 0 ? endIndex : (ushort)23;                                                            //проверка конечного значения если 0, то до конца
+            string err = "";                                                                                              //строка ошибки заполняемая при несоответсвии регистров
+            for (ushort i = startIndex; i < endIndex; i++)
+            {
+                try
+                {
+                    int tmp = ecrCtrl.Info.GetCounter(i);
+                    if (tmp != counters[i]) { err += $"Счётчик {i} имеет расхождеие с ККТ {counters[i]} != {tmp}\n"; }    //Зполнение ошибки несоотвествия счётчиков
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Не удолось получить доступ к счётчику №" + i + "");                              //ошибка доступа к регистру
+                }
+            }
+            Console.WriteLine("Запрошены данные с счётчиков с " + startIndex + " по " + endIndex + "\n" + err);           //логирование
+        }
+
+        /// <summary>
+        /// считывает все регистры в массив регистров
+        /// </summary>
+        public void GetRegisters()
+        {
+            ushort endIndex = 236;
+            ushort startIndex = 1;
+            for (ushort i = startIndex; i < endIndex; i++)
+            {
+                try
+                {
+                    registers[i] = ecrCtrl.Info.GetRegister(i);             //запрос значений регистров из ККТ
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Не удолось получить доступ к регистру №" + i + " за стартовое значение принят 0");
+                    inaccessibleRegisters.Add(i);
+                }
+            }
+            Console.WriteLine("Запрошены данные с регистров получены");     //логирование
+        }
+
+        /// <summary>
+        /// Считывает все счтчики в массив счётчиков
+        /// </summary>
+        public void GetCounters()
+        {
+            ushort endIndex = 23;
+            ushort startIndex = 1;
+            for (ushort i = startIndex; i < endIndex; i++)
+            {
+                try
+                {
+                    counters[i] = ecrCtrl.Info.GetCounter(i);               //запрос значений регистров из ККТ
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Не удолось получить доступ к счётчику №" + i + " за стартовое значение принят 0");
+                }
+            }
+            Console.WriteLine("Данные с счётчиков получены");               //логирование
+        }
+
+        /// <summary>
+        /// Применяет изменения врменного регистра в основной
+        /// </summary>
+        public void AddRegistersTmp()
+        {
+            ushort endIndex = 236;
+            ushort startIndex = 1;
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                registers[i] += registersTmp[i];                                                        //применение временного массива к конечному
+            }
+        }
+
+        /// <summary>
+        /// Утсановка значения  для каждого элемента или в заданном диапозоне
+        /// </summary>
+        /// <param name="arr">Массив</param>
+        /// <param name="value">Значение</param>
+        /// <param name="startIndex">Индекс с которого надо заполнять массив значениям</param>
+        /// <param name="endIndex">Конечный индекс заполнения, не включается</param>
+        public void SetValue(ref decimal[] arr, decimal value, ushort startIndex = 0, ushort endIndex = 0)
+        {
+            endIndex = endIndex > 0 ? endIndex : (ushort)arr.Length;
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                arr[i] = value;
+            }
+        }
+
     }
 }
