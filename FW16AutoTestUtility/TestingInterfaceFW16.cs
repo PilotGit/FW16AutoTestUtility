@@ -38,7 +38,7 @@ namespace FW16AutoTestUtility
         public const int countVatCode = 6;
 
         public EcrCtrl ecrCtrl;
-        decimal[] registersTmp;                  //массив временных регистров
+        decimal[] registersTmp = new decimal[236];                  //массив временных регистров
         public decimal[] registers = new decimal[236];              //массив регистров
         public int[] counters = new int[23];                        //массив счётчиков
         public List<int> inaccessibleRegisters = new List<int>();
@@ -119,11 +119,9 @@ namespace FW16AutoTestUtility
             {Native.CmdExecutor.NFDocType.Report,3 }
         };
 
-        public TestingInterfaceFW16(out EcrCtrl  ecrCtrl, ref decimal[] registersTmp, ref int[] counters )
+        public TestingInterfaceFW16(out EcrCtrl ecrCtrl)
         {
             this.ecrCtrl = ecrCtrl = new EcrCtrl();
-            this.registersTmp = registersTmp;
-            this.counters = counters;
             ConnectToFW();
             tenderCodeType = new Dictionary<Native.CmdExecutor.TenderCode, int>();
             var tenderList = ecrCtrl.Info.GetTendersList().GetEnumerator();                                         //получение коллекции соответствий кода платежа типу платежа

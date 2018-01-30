@@ -10,10 +10,6 @@ namespace FW16AutoTestUtility
     {
         TestingInterfaceFW16 TestingInterfaceFW16 = null;
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
-        public int[] counters = new int[23];                        //массив счётчиков
-        public decimal[] registers = new decimal[236];              //массив регистров
-        public List<int> inaccessibleRegisters = new List<int>();
-        decimal[] registersTmp = new decimal[236];                  //массив временных регистров
         string nameOerator = "test program";                        //имя касира 
         decimal[] coasts = new decimal[] { 217m, 193.7m };          //варианты цен
         decimal[] counts = new decimal[] { 1m, 5m, 0.17m, 1.73m };  //варианты колличества
@@ -21,7 +17,7 @@ namespace FW16AutoTestUtility
 
         public Tests()
         {
-            TestingInterfaceFW16 = new TestingInterfaceFW16(out ecrCtrl, ref registersTmp, ref counters);
+            TestingInterfaceFW16 = new TestingInterfaceFW16(out ecrCtrl);
             BeginTest();
         }
 
