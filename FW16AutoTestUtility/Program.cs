@@ -4,15 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FWAutoTestUtility
+namespace FW16AutoTestUtility
 {
     class Program
     {
         static void Main(string[] args)
         {
-            Class1 fw16 = new Class1();
-            Console.WriteLine();
+            Tests fw16 = new Tests();
+            Console.WriteLine("(press any key)");
             Console.ReadKey();
         }
     }
 }
+
+/*я гдето всё сломал*/
