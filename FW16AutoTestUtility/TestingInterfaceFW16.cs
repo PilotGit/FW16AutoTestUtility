@@ -29,6 +29,10 @@ namespace FW16AutoTestUtility
         /// </summary>
         public const int countReceiptKind = 4;
         /// <summary>
+        /// Количество типов нефискальных документов
+        /// </summary>
+        public static int countNFDocType = 3;
+        /// <summary>
         /// Количество типов оплаты
         /// </summary>
         public const int countTenderCode = 8;
@@ -40,6 +44,8 @@ namespace FW16AutoTestUtility
         /// Количество тпов добавления товара
         /// </summary>
         public const int countItemBy = 2;
+
+
 
         public EcrCtrl ecrCtrl;
         decimal[] registersTmp = new decimal[236];                  //массив временных регистров
@@ -221,7 +227,7 @@ namespace FW16AutoTestUtility
         /// <param name="document">Нефискальный документ</param>
         /// <param name="nfDocType">Тип нефискального документа</param>
         /// <param name="abort">Отмена чека</param>
-        public void DocumentComplete(NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, bool abort)
+        public int DocumentComplete(NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, bool abort)
         {
             if (abort)
             {
@@ -236,7 +242,7 @@ namespace FW16AutoTestUtility
                 counters[this.nfDocType[nfDocType] + 8]++;
                 AddRegistersTmp();
             }
-            RequestRegisters(111, 120);
+            return RequestRegisters(111, 120);
         }
 
         /// <summary>
@@ -271,7 +277,7 @@ namespace FW16AutoTestUtility
         /// <param name="document">Документ который следует завершить</param>
         /// <param name="receiptKind">Тип чека коррекции</param>
         /// <param name="abort">Отменить документ</param>
-        public void DocumentComplete(Correction document, ReceiptKind receiptKind, bool abort)
+        public int DocumentComplete(Correction document, ReceiptKind receiptKind, bool abort)
         {
             if (abort)
             {
@@ -286,7 +292,7 @@ namespace FW16AutoTestUtility
                 counters[this.receiptKind[receiptKind] + 4]++;
                 AddRegistersTmp();
             }
-            RequestRegisters(111, 120);
+            return RequestRegisters(111, 120);
         }
 
         /// <summary>
@@ -425,7 +431,7 @@ namespace FW16AutoTestUtility
         public int RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
-            string err = $"+-------+------------------+-------------------+\n" +
+            string err = "\n" +$"+-------+------------------+-------------------+\n" +
                 $"|   #   |       test       |        ККТ        |\n" +
                 $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
@@ -443,7 +449,7 @@ namespace FW16AutoTestUtility
                     }
                 }
             }
-            Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + "\n" + ((err.Length > 150) ? err : ""));           //логирование
+            Console.WriteLine("Запрошены данные с регистров с " + startIndex + " по " + endIndex + ((err.Length > 150) ? err : ""));           //логирование
             if (err.Length > 150) return 1;
             return 0;
         }
@@ -481,14 +487,17 @@ namespace FW16AutoTestUtility
             ushort startIndex = 1;
             for (ushort i = startIndex; i < endIndex; i++)
             {
-                try
+                if (inaccessibleRegisters.IndexOf(i) == -1)
                 {
-                    registers[i] = ecrCtrl.Info.GetRegister(i);             //запрос значений регистров из ККТ
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine("Не удолось получить доступ к регистру №" + i + " за стартовое значение принят 0");
-                    inaccessibleRegisters.Add(i);
+                    try
+                    {
+                        registers[i] = ecrCtrl.Info.GetRegister(i);             //запрос значений регистров из ККТ
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Не удолось получить доступ к регистру №" + i + " за стартовое значение принят 0");
+                        inaccessibleRegisters.Add(i);
+                    }
                 }
             }
             Console.WriteLine("Запрошены данные с регистров получены");     //логирование
