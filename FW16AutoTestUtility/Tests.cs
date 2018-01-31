@@ -18,7 +18,14 @@ namespace FW16AutoTestUtility
         public Tests()
         {
             TestingInterfaceFW16 = new TestingInterfaceFW16(out ecrCtrl);
-            BeginTest();
+            if (ecrCtrl.Fw16 != null)
+            {
+                BeginTest();
+            }
+            else
+            {
+                Console.WriteLine("Не удалось провести тестирование");
+            }
         }
 
         /// <summary>
@@ -51,10 +58,15 @@ namespace FW16AutoTestUtility
             ecrCtrl.Shift.Open(nameOperator);                //открытие смены для этого теста
             TestingInterfaceFW16.GetRegisters();
             TestingInterfaceFW16.GetCounters();
-            TestReceipt();                                  //вызов функции тестирования чека
+            if (TestReceiptMax() != 0)//вызов функции тестирования чека
+            {
+            //Console.WriteLine($"+------------+-----------------+-----------------+--------+---------------+---------------+\n" +
+            //    $"|{"Тип чека",12}|{"Процентная ставка",17}|{"Тип оплаты",17}|{"Товар по",8}|{"Номер оплаты",15}|{"Тип оплаты",15}|\n" +
+            //    $"+------------+-----------------+-----------------+--------+---------------+---------------+\n" + TestReceiptMin());
+            }
             TestCorrection();                               //вызов функции тестирования чека коррекции
             TestNonFiscal();                                //вызов функции нефискального документа
-            TestReceipt(true);                              //вызов функции тестирования чека c отменой.
+            TestReceiptMax(true);                              //вызов функции тестирования чека c отменой.
             TestNonFiscal(true);                            //вызов функции нефискального документа с отменой
             ecrCtrl.Shift.Close(nameOperator);               //закрытие смены этого теста
 
@@ -122,42 +134,98 @@ namespace FW16AutoTestUtility
         }
 
         /// <summary>
-        /// Тест чека    
+        /// Тестирование чека с перебором большого количества товаров
         /// </summary>
         /// <param name="abort">Отменить создание чека</param>
-        private void TestReceipt(bool abort = false)
+        private int TestReceiptMax(bool abort = false)
         {
-            for (int receiptKind = 1; receiptKind < 5; receiptKind++)
+            int ret = 0;
+
+            for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)
             {
+                for (int itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                {
                 TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, (ReceiptKind)receiptKind);
+                    for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)
+                    {
+                        for (int itemPaymentKind = 1; itemPaymentKind < TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
+                        {
+                            for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countCoasts); i++)
+                            {
+                                TestingInterfaceFW16.AddEntry(document,
+                                    (ReceiptKind)receiptKind,
+                                    "Item " + ((Native.CmdExecutor.VatCodeType)vatCode) + " " + (TestingInterfaceFW16.ItemBy)itemBy + " " + (ItemPaymentKind)itemPaymentKind + " " + i,
+                                    counts[i / TestingInterfaceFW16.countCoasts % TestingInterfaceFW16.countCounts],
+                                    (Native.CmdExecutor.VatCodeType)vatCode,
+                                    (TestingInterfaceFW16.ItemBy)itemBy,
+                                    coasts[i % TestingInterfaceFW16.countCoasts],
+                                    (ItemPaymentKind)itemPaymentKind);  //создание товара
+                            }
 
-                bool coast = true;
-                for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countVatCode * TestingInterfaceFW16.countCoasts * TestingInterfaceFW16.countPaymentKind); i++)
-                {
 
-                    TestingInterfaceFW16.AddEntry(document,
-                        (ReceiptKind)receiptKind,
-                        "Tovar" + i.ToString(),
-                        counts[i / TestingInterfaceFW16.countVatCode / TestingInterfaceFW16.countCoasts / TestingInterfaceFW16.countPaymentKind % TestingInterfaceFW16.countCounts],
-                        (Native.CmdExecutor.VatCodeType)((i / TestingInterfaceFW16.countCoasts / TestingInterfaceFW16.countPaymentKind % TestingInterfaceFW16.countVatCode) + 1),
-                        TestingInterfaceFW16.ItemBy.coast,
-                        coasts[i / TestingInterfaceFW16.countPaymentKind % TestingInterfaceFW16.countCoasts],
-                        (ItemPaymentKind)((i % TestingInterfaceFW16.countPaymentKind) + 1));  //создание товара
+                        }
+                    }
+
+                    decimal sum = 0m;
+                    for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
+                    {
+                        sum = Math.Round(document.Total / 9 - tenderCode, 2);
+                        sum += (decimal)(new Random().Next(-1 * (int)sum * (5 / 100), (int)sum * (5 / 100)));
+                        TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, sum);
+                        sum = document.Total - document.TotalaPaid;
+                    }
+
+                    TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum);
+
+                    ret += TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort);
                 }
-
-                decimal sum = 0m;
-                for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
-                {
-                    sum = Math.Round(document.Total / 9 - tenderCode, 2);
-                    sum += (decimal)(new Random().Next(-1 * (int)sum * (5 / 100), (int)sum * (5 / 100)));
-                    TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, sum);
-                    sum = document.Total - document.TotalaPaid;
-                }
-
-                TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum);
-
-                TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort);
             }
+            return ret;
+        }
+
+        /// <summary>
+        /// Тестирование чека с перебором множества небольших чеков и формирование таблицы ошибочных чеков
+        /// </summary>
+        /// <param name="abort">Булево значение отмены чека</param>
+        /// <returns>Строка формирующая таблицу ошибочных чеков</returns>
+        private string TestReceiptMin(bool abort = false)
+        {
+            string err = null;
+
+            for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)
+            {
+                for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)
+                {
+                    for (int itemPaymentKind = 1; itemPaymentKind < TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
+                    {
+                        for (int itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                        {
+                            for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
+                            {
+                                TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, (ReceiptKind)receiptKind);
+                                for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countCoasts); i++)
+                                {
+                                    TestingInterfaceFW16.AddEntry(document,
+                                        (ReceiptKind)receiptKind,
+                                        "Item " + ((Native.CmdExecutor.VatCodeType)vatCode) + " " + (TestingInterfaceFW16.ItemBy)itemBy + " " + (ItemPaymentKind)itemPaymentKind + " " + i,
+                                        counts[i / TestingInterfaceFW16.countCoasts % TestingInterfaceFW16.countCounts],
+                                        (Native.CmdExecutor.VatCodeType)vatCode,
+                                        (TestingInterfaceFW16.ItemBy)itemBy,
+                                        coasts[i % TestingInterfaceFW16.countCoasts],
+                                        (ItemPaymentKind)itemPaymentKind);  //создание товара
+                                }
+                                TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode) tenderCode, document.Total);
+                                if (TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort) != 0)
+                                {
+                                    err += $"|{(ReceiptKind)receiptKind,12}|{(Native.CmdExecutor.VatCodeType)vatCode,17}|{(ItemPaymentKind)itemPaymentKind,17}|{(TestingInterfaceFW16.ItemBy)itemBy,8}|{(Native.CmdExecutor.TenderCode)tenderCode,15}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode) tenderCode],15}|\n";
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+            return err;
         }
     }
 }

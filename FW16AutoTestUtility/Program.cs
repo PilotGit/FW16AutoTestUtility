@@ -16,5 +16,3 @@ namespace FW16AutoTestUtility
         }
     }
 }
-
-/*я гдето всё сломал*/

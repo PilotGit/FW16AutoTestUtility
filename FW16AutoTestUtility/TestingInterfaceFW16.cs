@@ -23,7 +23,7 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Количество типов оплаты
         /// </summary>
-        public const int countPaymentKind = 6;
+        public const int countItemPaymentKind = 6;
         /// <summary>
         /// Количество типов чеков
         /// </summary>
@@ -36,6 +36,10 @@ namespace FW16AutoTestUtility
         /// Количество ставок НДС
         /// </summary>
         public const int countVatCode = 6;
+        /// <summary>
+        /// Количество тпов добавления товара
+        /// </summary>
+        public const int countItemBy = 2;
 
         public EcrCtrl ecrCtrl;
         decimal[] registersTmp = new decimal[236];                  //массив временных регистров
@@ -113,7 +117,7 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Соответствие типа по номеру платежа его типу(электронные, аванс)
         /// </summary>
-        private Dictionary<Native.CmdExecutor.TenderCode, int> tenderCodeType;
+        public Dictionary<Native.CmdExecutor.TenderCode, int> tenderCodeType;
 
         /// <summary>
         /// Соответствие типа нефискльного документа его номеру в ККТ
@@ -128,13 +132,15 @@ namespace FW16AutoTestUtility
         public TestingInterfaceFW16(out EcrCtrl ecrCtrl)
         {
             this.ecrCtrl = ecrCtrl = new EcrCtrl();
-            ConnectToFW();
-            tenderCodeType = new Dictionary<Native.CmdExecutor.TenderCode, int>();
-            var tenderList = ecrCtrl.Info.GetTendersList().GetEnumerator();                                         //получение коллекции соответствий кода платежа типу платежа
-            for (int i = 0; i < countTenderCode; i++)
+            if (ConnectToFW() == 0)
             {
-                tenderList.MoveNext();                                                                              //перебор коллекции
-                tenderCodeType.Add((Native.CmdExecutor.TenderCode)i, tenderType[tenderList.Current.Mode]);          //создание соответствия кода платежа типу 
+                tenderCodeType = new Dictionary<Native.CmdExecutor.TenderCode, int>();
+                var tenderList = ecrCtrl.Info.GetTendersList().GetEnumerator();                                         //получение коллекции соответствий кода платежа типу платежа
+                for (int i = 0; i < countTenderCode; i++)
+                {
+                    tenderList.MoveNext();                                                                              //перебор коллекции
+                    tenderCodeType.Add((Native.CmdExecutor.TenderCode)i, tenderType[tenderList.Current.Mode]);          //создание соответствия кода платежа типу 
+                }
             }
         }
 
@@ -143,27 +149,19 @@ namespace FW16AutoTestUtility
         /// </summary>
         /// <param name="serialPort">Порт по покотору производится поключение к ККТ</param>
         /// <param name="baudRate">Частота подключения</param>
-        void ConnectToFW(int serialPort = 1, int baudRate = 57600)
+        int ConnectToFW(int serialPort = 1, int baudRate = 57600)
         {
             try
             {
                 ecrCtrl.Init(serialPort, baudRate);             //Подключчение по порту и частоте
                 ShowInformation();
             }
-            catch (EcrException excep)
-            {
-                ecrCtrl.Reconnect();                            //Переподключение в случае попытки повторного подключения
-                System.Diagnostics.Debug.Write(excep.Message);
-            }
-            catch (System.IO.IOException excep)
-            {
-                Console.WriteLine(excep.Message);                 //вывод ошибки неверного порта
-            }
-            catch (System.UnauthorizedAccessException excep)
+            catch (Exception excep)
             {
                 Console.WriteLine(excep.Message);                 //вывод ошибки доступа порта
+                return 1;
             }
-
+            return 0;
         }
 
         void ShowInformation()
@@ -263,7 +261,7 @@ namespace FW16AutoTestUtility
                 Console.WriteLine("Оформлен чек типа " + receiptKind + "");                    //логирование
                 AddRegistersTmp();
             }
-            return RequestRegisters(160, 182);
+            return RequestRegisters(160, 182)+ RequestRegisters(111, 120);
         }
 
         /// <summary>
@@ -287,6 +285,7 @@ namespace FW16AutoTestUtility
                 counters[this.receiptKind[receiptKind] + 4]++;
                 AddRegistersTmp();
             }
+            RequestRegisters(111, 120);
         }
 
         /// <summary>
@@ -297,14 +296,14 @@ namespace FW16AutoTestUtility
         /// <param name="name">Название товара</param>
         /// <param name="count">Количество товара</param>
         /// <param name="vatCode">Тип налоговой ставки</param>
-        /// <param name="coast">true - параметр money - стоимость, false - цена </param>
+        /// <param name="itemBy">true - параметр money - стоимость, false - цена </param>
         /// <param name="money">Сумма</param>
         /// <param name="paymentKind">Способ рассчёта (Предоплата, полная оплата, кредит..)</param>
         /// <param name="kind">Тип добавляемого товара (товар,услуга..)</param>
-        public void AddEntry(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, ItemBy coast, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
+        public void AddEntry(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, ItemBy itemBy, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
         {
             Fw16.Ecr.ReceiptEntry receiptEntry;                                                                                 //товар
-            if (coast == ItemBy.coast) receiptEntry = document.NewItemCosted(name, name, count, vatCode, money);                                //создание по стоимости
+            if (itemBy == ItemBy.coast) receiptEntry = document.NewItemCosted(new Random().Next().ToString(), name, count, vatCode, money);                                //создание по стоимости
             else receiptEntry = document.NewItemPriced(new Random().Next().ToString(), name, vatCode, money, count);            //создание по цене
             receiptEntry.PaymentKind = paymentKind;                                                                             //спооб рассчёта
             receiptEntry.Kind = kind;                                                                                           //тип добавляемого товара
@@ -331,25 +330,24 @@ namespace FW16AutoTestUtility
         /// <param name="sum">Сумма оплаты</param>
         public void AddPayment(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
-            document.AddPayment(tenderCode, sum);                                                                                                                               //добавление оплаты 
+            document.AddPayment(tenderCode, sum);                                                                                                                                       //добавление оплаты 
 
-            registersTmp[this.receiptKind[receiptKind]] += sum;                                                                                                                 //добавление в регистры (1-4) суммы по типу операции
-            registersTmp[this.receiptKind[receiptKind] * 10 + 1 + (int)tenderCode] += sum;                                                                                      //добавление в регистры (11-18, 21-28, 31-38, 41-48) суммы по номеру платежа
-            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[this.receiptKind[receiptKind] * 10 + 1 + 8] += sum;     //добавление в регистры (19, 29, 39, 49) суммы электрооного типа платежа
+            registersTmp[this.receiptKind[receiptKind]] += sum;                                                                                                                         //добавление в регистры (1-4) суммы по типу операции
+            registersTmp[this.receiptKind[receiptKind] * 10 + 1 + (int)tenderCode] += sum;                                                                                              //добавление в регистры (11-18, 21-28, 31-38, 41-48) суммы по номеру платежа
+            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[this.receiptKind[receiptKind] * 10 + 1 + 8] += sum;             //добавление в регистры (19, 29, 39, 49) суммы электрооного типа платежа
 
-            registersTmp[(int)tenderCode + 172] += sum;                                                                                                                         //добавление в регистры (172-179) суммы открытого документа по номеру платежа
+            registersTmp[(int)tenderCode + 172] += sum;                                                                                                                                 //добавление в регистры (172-179) суммы открытого документа по номеру платежа
             switch (this.tenderCodeType[tenderCode])
             {
-                case 1: registersTmp[181] += sum; break;                                                                                                                        //добавление в регистр (181) суммы открытого документа электронного типа платежа
-                case 0: registersTmp[180] += sum; break;                                                                                                                        //добавление в регистр (180) суммы открытого документа наличного типа платежа
+                case 1: registersTmp[181] += sum; break;                                                                                                                                //добавление в регистр (181) суммы открытого документа электронного типа платежа
+                case 0: registersTmp[180] += sum; break;                                                                                                                                //добавление в регистр (180) суммы открытого документа наличного типа платежа
 
                 default:
                     break;
             }
-            /*
-            if (this.tenderCodeType[tenderCode] == tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[181] += sum;             //добавление в регистр (181) суммы открытого документа электронного типа платежа
-            else registersTmp[180] += sum;                                                                                                  //добавление в регистр (180) суммы открытого документа наличного типа платежа
-            */
+            registersTmp[(int)tenderCode + 111] = this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
+            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] = this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистр (119) суммы электрооного типа платежа
+
             registersTmp[this.receiptKind[receiptKind] + 190] += sum;                                                                                                                   //добавление в регистры (191-194) накопительный регистр по типу операции
         }
 
@@ -365,6 +363,10 @@ namespace FW16AutoTestUtility
             document.AddTender(tenderCode, sum);
             registersTmp[tenderCodeType[tenderCode] + this.receiptKind[receiptKind] * 10 + 41] += sum;                                                                                  //добавление в регистры (51-55,71-75) суммы по типу платежа
             registersTmp[this.receiptKind[receiptKind] + 4] += sum;                                                                                                                     //добавление в регистры (5,7) суммы по типу чека коррекции
+
+
+            registersTmp[(int)tenderCode + 111] = this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
+            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] = this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистры (119) суммы электрооного типа платежа
         }
 
         /// <summary>
