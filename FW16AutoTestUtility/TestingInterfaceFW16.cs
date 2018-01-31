@@ -268,7 +268,7 @@ namespace FW16AutoTestUtility
                 Console.WriteLine("Оформлен чек типа " + receiptKind + "");                     //логирование
                 AddRegistersTmp();
             }
-            return RequestRegisters(160, 182)+ RequestRegisters(111, 120);
+            return RequestRegisters(160, 182)+RequestRegisters(111, 120);
         }
 
         /// <summary>
@@ -352,8 +352,8 @@ namespace FW16AutoTestUtility
                 default:
                     break;
             }
-            registersTmp[(int)tenderCode + 111] = this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
-            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] = this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистр (119) суммы электрооного типа платежа
+            registersTmp[(int)tenderCode + 111] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
+            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистр (119) суммы электрооного типа платежа
 
             registersTmp[this.receiptKind[receiptKind] + 190] += sum;                                                                                                                   //добавление в регистры (191-194) накопительный регистр по типу операции
         }
@@ -372,8 +372,8 @@ namespace FW16AutoTestUtility
             registersTmp[this.receiptKind[receiptKind] + 4] += sum;                                                                                                                     //добавление в регистры (5,7) суммы по типу чека коррекции
 
 
-            registersTmp[(int)tenderCode + 111] = this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
-            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] = this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистры (119) суммы электрооного типа платежа
+            registersTmp[(int)tenderCode + 111] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
+            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистры (119) суммы электрооного типа платежа
         }
 
         /// <summary>
