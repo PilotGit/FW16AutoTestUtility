@@ -115,13 +115,13 @@ namespace FW16AutoTestUtility
                 TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Correction document, nameOperator, (ReceiptKind)receiptKind);
                 decimal sum = 0;
 
-                for (int i = 0; i < TestingInterfaceFW16.countCoasts * TestingInterfaceFW16.countTenderCode; i++)         //перебор возврата средств всеми способами, целове и дробная суммы
+                for (int i = 0; i < TestingInterfaceFW16.countCoasts * TestingInterfaceFW16.countTenderCode; i++)           //перебор возврата средств всеми способами, целове и дробная суммы
                 {
                     TestingInterfaceFW16.AddTender(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)(i / TestingInterfaceFW16.countCoasts % TestingInterfaceFW16.countTenderCode), coasts[i % TestingInterfaceFW16.countCoasts]);
                     sum += coasts[i % TestingInterfaceFW16.countCoasts];
                 }
                 decimal sumPaid = 0m;
-                for (ushort i = 1; i <= TestingInterfaceFW16.countVatCode; i++)                      //перебор налоговых ставок
+                for (ushort i = 1; i <= TestingInterfaceFW16.countVatCode; i++)                                             //перебор налоговых ставок
                 {
                     sumPaid = Math.Round(sum / ((TestingInterfaceFW16.countVatCode + 1) - i), 2);
                     TestingInterfaceFW16.AddAmount(document, (ReceiptKind)receiptKind, (VatCode)i, sumPaid);
@@ -141,16 +141,16 @@ namespace FW16AutoTestUtility
         {
             int ret = 0;
 
-            for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)
+            for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)                              //перебор типов чеков
             {
-                for (int itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                for (int itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)                                               //перебор типов добавления товара
                 {
                 TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, (ReceiptKind)receiptKind);
-                    for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)
+                    for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)                                      //перебор типов алоговой ставки
                     {
-                        for (int itemPaymentKind = 1; itemPaymentKind < TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
+                        for (int itemPaymentKind = 1; itemPaymentKind < TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)   //перебор типов оплаты товара
                         {
-                            for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countCoasts); i++)
+                            for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countCoasts); i++)             //перебор комбинаций стоиости и количества
                             {
                                 TestingInterfaceFW16.AddEntry(document,
                                     (ReceiptKind)receiptKind,
@@ -167,7 +167,7 @@ namespace FW16AutoTestUtility
                     }
 
                     decimal sum = 0m;
-                    for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
+                    for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                           //перебор видов платежей
                     {
                         sum = Math.Round(document.Total / 9 - tenderCode, 2);
                         sum += (decimal)(new Random().Next(-1 * (int)sum * (5 / 100), (int)sum * (5 / 100)));
@@ -175,7 +175,7 @@ namespace FW16AutoTestUtility
                         sum = document.Total - document.TotalaPaid;
                     }
 
-                    TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum);
+                    TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum);       //оплата наличными
 
                     ret += TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort);
                 }
@@ -192,18 +192,18 @@ namespace FW16AutoTestUtility
         {
             string err = null;
 
-            for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)
+            for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)                              //перебор типов чеков
             {
-                for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)
+                for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)                                          //перебор типов алоговой ставки
                 {
-                    for (int itemPaymentKind = 1; itemPaymentKind < TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
+                    for (int itemPaymentKind = 1; itemPaymentKind < TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)       //перебор типов оплаты товара
                     {
-                        for (int itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                        for (int itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)                                       //перебор типов добавления товара
                         {
-                            for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
+                            for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                   //перебор видов платежей
                             {
                                 TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, (ReceiptKind)receiptKind);
-                                for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countCoasts); i++)
+                                for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countCoasts); i++)         //перебор комбинаций стоиости и количества
                                 {
                                     TestingInterfaceFW16.AddEntry(document,
                                         (ReceiptKind)receiptKind,
