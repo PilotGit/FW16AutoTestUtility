@@ -16,7 +16,7 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Количество цен
         /// </summary>
-        public const int countCoasts = 2;
+        public const int countcosts = 2;
         /// <summary>
         /// Количество вариантов количеств
         /// </summary>
@@ -58,7 +58,7 @@ namespace FW16AutoTestUtility
         public enum ItemBy
         {
             price = 0,
-            coast = 1
+            cost = 1
         }
 
         /// <summary>
@@ -371,9 +371,9 @@ namespace FW16AutoTestUtility
                 {
                     document.Abort();                                                               //отмена документа
                     Console.WriteLine("Отменён чек типа " + receiptKind + "");                      //логирование
-                    counters[this.receiptKind[receiptKind] + 11]++;                                 //увеличение счётчика (12-15) отмены по типу чека
                     Log($"\t\tЧек отменён.\n" +
                         $"---------------------------------------------------");
+                    counters[this.receiptKind[receiptKind] + 11]++;                                 //увеличение счётчика (12-15) отмены по типу чека
                 }
                 catch (Exception ex)
                 {
@@ -388,12 +388,12 @@ namespace FW16AutoTestUtility
                 try
                 {
                     document.Complete();                                                            //закрытие чека
-                    counters[this.receiptKind[receiptKind]]++;                                      //учеличение счётчика (1-4) оформления по типу чека
-                    SetValue(registers, 0, 160, 182);
                     Console.WriteLine("Оформлен чек типа " + receiptKind + "");                     //логирование
-                    AddRegistersTmp();
                     Log($"\t\tЧек оформлен.\n" +
                         $"---------------------------------------------------");
+                    counters[this.receiptKind[receiptKind]]++;                                      //учеличение счётчика (1-4) оформления по типу чека
+                    SetValue(registers, 0, 160, 182);
+                    AddRegistersTmp();
                 }
                 catch (Exception ex)
                 {
@@ -416,16 +416,40 @@ namespace FW16AutoTestUtility
         {
             if (abort)
             {
-                ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);
-                Console.WriteLine("Отменён чек коррекции типа " + receiptKind + "");            //логирование
-                counters[this.receiptKind[receiptKind] + 4 + 11]++;
+                try
+                {
+                    ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);
+                    Console.WriteLine("Отменён чек коррекции типа " + receiptKind + "");            //логирование
+                    Log($"\t\tЧек коррекции отменён.\n" +
+                        $"---------------------------------------------------");
+                    counters[this.receiptKind[receiptKind] + 4 + 11]++;
+                }
+                catch (Exception ex)
+                {
+                    Log($"\t\tНе удалось отменить чек коррекции.\n" +
+                        $"\t\t Exception={ex.Message}" +
+                        $"---------------------------------------------------");
+                    document = null;
+                }
             }
             else
             {
-                document.Complete();                                                            //закрытие чека коррекции
-                Console.WriteLine("Оформлен чек коррекции типа " + receiptKind + "");           //логирование
-                counters[this.receiptKind[receiptKind] + 4]++;
-                AddRegistersTmp();
+                try
+                {
+                    document.Complete();                                                            //закрытие чека коррекции
+                    Console.WriteLine("Оформлен чек коррекции типа " + receiptKind + "");           //логирование
+                    Log($"\t\tЧек коррекции оформлен.\n" +
+                        $"---------------------------------------------------");
+                    counters[this.receiptKind[receiptKind] + 4]++;
+                    AddRegistersTmp();
+                }
+                catch (Exception ex)
+                {
+                    Log($"\t\tНе удалось оформить чек коррекции.\n" +
+                        $"\t\t Exception={ex.Message}" +
+                        $"---------------------------------------------------");
+                    document = null;
+                }
             }
             return RequestRegisters(111, 120);
         }
@@ -442,25 +466,36 @@ namespace FW16AutoTestUtility
         /// <param name="money">Сумма</param>
         /// <param name="paymentKind">Способ рассчёта (Предоплата, полная оплата, кредит..)</param>
         /// <param name="kind">Тип добавляемого товара (товар,услуга..)</param>
-        public void AddEntry(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, ItemBy itemBy, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
+        public void AddEntry(Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, ItemBy itemBy, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
         {
-            Fw16.Ecr.ReceiptEntry receiptEntry;                                                                                         //товар
-            if (itemBy == ItemBy.coast) receiptEntry = document.NewItemCosted(random.Next().ToString(), name, count, vatCode, money);   //создание по стоимости
-            else receiptEntry = document.NewItemPriced(random.Next().ToString(), name, vatCode, money, count);                          //создание по цене
-            receiptEntry.PaymentKind = paymentKind;                                                                                     //спооб рассчёта
-            receiptEntry.Kind = kind;                                                                                                   //тип добавляемого товара
-            document.AddEntry(receiptEntry);                                                                                            //добавления товара в чек
+                string code = random.Next().ToString();
+            try
+            {
+                ReceiptEntry receiptEntry;                                                                                         //товар
+                if (itemBy == ItemBy.cost) receiptEntry = document.NewItemCosted(code, name, count, vatCode, money);   //создание по стоимости
+                else receiptEntry = document.NewItemPriced(code, name, vatCode, money, count);                          //создание по цене
+                receiptEntry.PaymentKind = paymentKind;                                                                                     //спооб рассчёта
+                receiptEntry.Kind = kind;                                                                                                   //тип добавляемого товара
+                document.AddEntry(receiptEntry);                                                                                            //добавления товара в чек
+                Log($"\t\t\tТовар добавлен\n" +
+                    $"\t\t\t {code,15}|{name,12}|{itemBy,6}|{count,7}|{money,8}|{vatCode,15}");
+                registersTmp[(this.receiptKind[receiptKind] - 1) * 10 + this.vatCode[vatCode] - 1 + 120] += receiptEntry.Cost;              //добаление в регистр (120-125,130-135,140-145,150-155) суммы по ставке НДС
+                if (this.vatCode[vatCode] != 3 && this.vatCode[vatCode] != 4)                                                               //проверка на нулевые ставки НДС
+                    registersTmp[(this.receiptKind[receiptKind] - 1) * 10 + (this.vatCode[vatCode] > 4 ? this.vatCode[vatCode] - 2 : this.vatCode[vatCode]) + 120 + 5] += receiptEntry.VatAmount;   //добавление в регистр (126-129,136-139,146-149,156-159) суммы НДС 
+                registersTmp[this.receiptKind[receiptKind] * 10 + this.paymentKind[paymentKind] + 190] += receiptEntry.Cost;                //добавление в регистр (20-206, 210-216, 220-226, 230-236) суммы по способу рассчёта 
 
-            registersTmp[(this.receiptKind[receiptKind] - 1) * 10 + this.vatCode[vatCode] - 1 + 120] += receiptEntry.Cost;              //добаление в регистр (120-125,130-135,140-145,150-155) суммы по ставке НДС
-            if (this.vatCode[vatCode] != 3 && this.vatCode[vatCode] != 4)                                                               //проверка на нулевые ставки НДС
-                registersTmp[(this.receiptKind[receiptKind] - 1) * 10 + (this.vatCode[vatCode] > 4 ? this.vatCode[vatCode] - 2 : this.vatCode[vatCode]) + 120 + 5] += receiptEntry.VatAmount;   //добавление в регистр (126-129,136-139,146-149,156-159) суммы НДС 
-            registersTmp[this.receiptKind[receiptKind] * 10 + this.paymentKind[paymentKind] + 190] += receiptEntry.Cost;                //добавление в регистр (20-206, 210-216, 220-226, 230-236) суммы по способу рассчёта 
+                registersTmp[160] += receiptEntry.Cost;                                                                                     //добавление в регистр (160) суммы открытого документа
+                registersTmp[this.vatCode[vatCode] + 160] += receiptEntry.Cost;                                                             //добавление в регситр (161-166) сумма открытого документа по ставкам НДС
+                if (this.vatCode[vatCode] != 3 && this.vatCode[vatCode] != 4)
+                    registersTmp[(this.vatCode[vatCode] > 4 ? this.vatCode[vatCode] - 2 : this.vatCode[vatCode]) + 160 + 6] += receiptEntry.VatAmount;                                              //добавление в регситр (167-170) суммы НДС открытого документа 
+                registersTmp[171]++;                                                                                                        //Добавление в регситр (171)  количество товарных позиций
+            }catch(Exception ex)
+            {
+                Log($"\t\t\tНе удалось добавить товар\n" +
+                    $"\t\t\t {code,15}|{name,12}|{itemBy,5}|{count,7}|{money,8}|{vatCode,13}\n" +
+                    $"\t\t\t Exception={ex.Message}");
 
-            registersTmp[160] += receiptEntry.Cost;                                                                                     //добавление в регистр (160) суммы открытого документа
-            registersTmp[this.vatCode[vatCode] + 160] += receiptEntry.Cost;                                                             //добавление в регситр (161-166) сумма открытого документа по ставкам НДС
-            if (this.vatCode[vatCode] != 3 && this.vatCode[vatCode] != 4)
-                registersTmp[(this.vatCode[vatCode] > 4 ? this.vatCode[vatCode] - 2 : this.vatCode[vatCode]) + 160 + 6] += receiptEntry.VatAmount;                                              //добавление в регситр (167-170) суммы НДС открытого документа 
-            registersTmp[171]++;                                                                                                        //Добавление в регситр (171)  количество товарных позиций
+            }
         }
 
         /// <summary>
@@ -470,7 +505,7 @@ namespace FW16AutoTestUtility
         /// <param name="receiptKind">Тип чека (Приход, Отмена прихода..)</param>
         /// <param name="tenderCode">Тип оплаты</param>
         /// <param name="sum">Сумма оплаты</param>
-        public void AddPayment(Fw16.Ecr.Receipt document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        public void AddPayment(Receipt document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
             document.AddPayment(tenderCode, sum);                                                                                                                                       //добавление оплаты 
 
