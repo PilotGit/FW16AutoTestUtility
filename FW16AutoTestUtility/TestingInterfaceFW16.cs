@@ -53,8 +53,8 @@ namespace FW16AutoTestUtility
 
         public EcrCtrl ecrCtrl;
         public uint versionFFD = 0;
-        decimal[] registersTmp = new decimal[236];                  //массив временных регистров
-        public decimal[] registers = new decimal[236];              //массив регистров
+        decimal[] registersTmp = new decimal[237];                  //массив временных регистров
+        public decimal[] registers = new decimal[237];              //массив регистров
         public int[] counters = new int[23];                        //массив счётчиков
         public List<int> inaccessibleRegisters = new List<int>();
         private Random random = new Random();
@@ -758,10 +758,11 @@ namespace FW16AutoTestUtility
         /// Обновление программных регистров данными из ККТ
         /// </summary>
         /// <param name="arr">Массив пропускаемых регистров</param>
-        public void GetRegisters(int[] arr = null)
+        public void GetRegisters(int[] arr =null)
         {
-            ushort endIndex = 236;
+            ushort endIndex = 237;
             ushort startIndex = 1;
+            if (arr == null) arr = new int[] { -1 };
             for (ushort i = startIndex; i < endIndex; i++)
             {
                 if (inaccessibleRegisters.IndexOf(i) == -1 && Array.IndexOf(arr, i) == -1)
@@ -820,7 +821,7 @@ namespace FW16AutoTestUtility
         /// </summary>
         public void AddRegistersTmp()
         {
-            ushort endIndex = 236;
+            ushort endIndex = 237;
             ushort startIndex = 1;
             for (int i = startIndex; i < endIndex; i++)
             {
