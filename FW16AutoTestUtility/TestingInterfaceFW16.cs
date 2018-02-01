@@ -561,7 +561,7 @@ namespace FW16AutoTestUtility
                 document.AddTender(tenderCode, sum);
 
                 Log($"\t\t\tСумма коррекции добавлена\n" +
-                        $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}");
+                        $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)this.tenderCodeType[tenderCode],7}|{sum,8}");
 
                 registersTmp[tenderCodeType[tenderCode] + this.receiptKind[receiptKind] * 10 + 41] += sum;                                                                                  //добавление в регистры (51-55,71-75) суммы по типу платежа
                 registersTmp[this.receiptKind[receiptKind] + 4] += sum;                                                                                                                     //добавление в регистры (5,7) суммы по типу чека коррекции

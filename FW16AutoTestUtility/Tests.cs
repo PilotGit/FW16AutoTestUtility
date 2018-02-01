@@ -56,8 +56,11 @@ namespace FW16AutoTestUtility
         public void SimpleTest()                            //функция прогона по всем видам чеков и чеков коррекции
         {
             TestingInterfaceFW16.OpenShift(nameOperator);   //открытие смены для этого теста
+            TestingInterfaceFW16.RequestRegisters(); //dsfdsfewdsff
             TestingInterfaceFW16.GetRegisters();
             TestingInterfaceFW16.GetCounters();
+            tetetet();                          //sdfdsfdsfsfsdf
+            TestingInterfaceFW16.RequestRegisters();//dsfsdfdsfdsfdsf
             if (TestReceiptMax() != 0)//вызов функции тестирования чека
             {
                 Console.WriteLine($"+------------+-----------------+-----------------+--------+---------------+---------------+\n" +
@@ -88,6 +91,51 @@ namespace FW16AutoTestUtility
 
             //TestCorrection(true);                         //вызов функции тестирования чека коррекции с отменой
             //отключено в связи с тем что чек коррекции не возможно отменить, потому что он отправляется одним пакетом
+        }
+
+        private void tetetet()
+        {
+            int ret = 0;
+
+            for (int receiptKind = 1; receiptKind <= 1; receiptKind++)                              //перебор типов чеков
+            {
+                for (int itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)                                               //перебор типов добавления товара
+                {
+                    TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, (ReceiptKind)receiptKind);
+                    for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)                                      //перебор типов налоговой ставки
+                    {
+                        for (int itemPaymentKind = 1; itemPaymentKind < TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)   //перебор типов оплаты товара
+                        {
+                            for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countcosts); i++)             //перебор комбинаций стоиости и количества
+                            {
+                                TestingInterfaceFW16.AddEntry(document,
+                                    (ReceiptKind)receiptKind,
+                                    "Item " + vatCode + "" + itemBy + "" + itemPaymentKind + "" + i,
+                                    counts[i / TestingInterfaceFW16.countcosts % TestingInterfaceFW16.countCounts],
+                                    (Native.CmdExecutor.VatCodeType)vatCode,
+                                    (TestingInterfaceFW16.ItemBy)itemBy,
+                                    costs[i % TestingInterfaceFW16.countcosts],
+                                    (ItemPaymentKind)itemPaymentKind);  //создание товара
+                            }
+
+
+                        }
+                    }
+
+                    decimal sum = 0m;
+                    for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                           //перебор видов платежей
+                    {
+                        sum = Math.Round(document.Total / 9 - tenderCode, 2);
+                        sum += (decimal)(new Random().Next(-1 * (int)sum * (5 / 100), (int)sum * (5 / 100)));
+                        TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, sum);
+                        sum = document.Total - document.TotalaPaid;
+                    }
+
+                    TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum);       //оплата наличными
+
+                    ret += TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, false);
+                }
+            }
         }
 
         /// <summary>
