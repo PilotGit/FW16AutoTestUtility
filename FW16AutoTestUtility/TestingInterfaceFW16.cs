@@ -49,6 +49,7 @@ namespace FW16AutoTestUtility
 
 
         public EcrCtrl ecrCtrl;
+        public uint versionFFD = 0;
         decimal[] registersTmp = new decimal[236];                  //массив временных регистров
         public decimal[] registers = new decimal[236];              //массив регистров
         public int[] counters = new int[23];                        //массив счётчиков
@@ -191,14 +192,17 @@ namespace FW16AutoTestUtility
 
         void ShowInformation()
         {
+            versionFFD = ecrCtrl.Info.FfdVersion;
             Console.WriteLine("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
                 "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
                 "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
-                "\nМодель: " + ecrCtrl.Info.EcrInfo.Model);
+                "\nМодель: " + ecrCtrl.Info.EcrInfo.Model +
+                "\nФФД: v" + versionFFD);
             Log("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
                 "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
                 "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
-                "\nМодель: " + ecrCtrl.Info.EcrInfo.Model + "");
+                "\nМодель: " + ecrCtrl.Info.EcrInfo.Model + 
+                "\nФФД: v"+versionFFD);
         }
 
 
@@ -471,11 +475,14 @@ namespace FW16AutoTestUtility
             string code = random.Next().ToString();
             try
             {
-                ReceiptEntry receiptEntry;                                                                                         //товар
-                if (itemBy == ItemBy.cost) receiptEntry = document.NewItemCosted(code, name, count, vatCode, money);   //создание по стоимости
-                else receiptEntry = document.NewItemPriced(code, name, vatCode, money, count);                          //создание по цене
-                receiptEntry.PaymentKind = paymentKind;                                                                                     //спооб рассчёта
-                receiptEntry.Kind = kind;                                                                                                   //тип добавляемого товара
+                ReceiptEntry receiptEntry;                                                                                                  //товар
+                if (itemBy == ItemBy.cost) receiptEntry = document.NewItemCosted(code, name, count, vatCode, money);                        //создание по стоимости
+                else receiptEntry = document.NewItemPriced(code, name, vatCode, money, count);                                              //создание по цене
+                if (ecrCtrl.Info.FfdVersion >= 2)
+                {
+                    receiptEntry.PaymentKind = paymentKind;                                                                                     //спооб рассчёта
+                    receiptEntry.Kind = kind;                                                                                                   //тип добавляемого товара
+                }
                 document.AddEntry(receiptEntry);                                                                                            //добавления товара в чек
 
                 Log($"\t\t\tТовар добавлен\n" +
@@ -567,7 +574,7 @@ namespace FW16AutoTestUtility
             catch (Exception ex)
             {
                 Log($"\t\t\tНе удалось добавить сумму коррекции\n" +
-                    $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}\n" +
+                    $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)this.tenderCodeType[tenderCode],7}|{sum,8}\n" +
                     $"\t\t\t Exception={ex.Message}");
             }
         }
@@ -591,7 +598,7 @@ namespace FW16AutoTestUtility
                 document.AddTender(tender);
 
                 Log($"\t\t\tСумма добавлена\n" +
-                        $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}");
+                    $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)this.tenderCodeType[tenderCode],7}|{sum,8}");
 
                 registersTmp[this.nfDocType[nfDocType] + 8] += sum;                                                                                                                                 //добавление в регистры (9,10) суммы по типу нефискального документа
                 registersTmp[(int)tenderCode + this.nfDocType[nfDocType] * 10 + 81] += sum;                                                                                                         //добавление в регистры (91-98,101-108) суммы по номеру платежа
