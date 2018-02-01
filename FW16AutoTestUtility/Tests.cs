@@ -147,7 +147,7 @@ namespace FW16AutoTestUtility
                     if (TestingInterfaceFW16.DocumentComplete(document, (Native.CmdExecutor.NFDocType)nfDocType, abort) != 0)
                     {
                         err += $"|{(Native.CmdExecutor.NFDocType)nfDocType,12}|{(Native.CmdExecutor.TenderCode)tenderCode,15}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode],15}|\n";
-                        TestingInterfaceFW16.GetRegisters();
+                        TestingInterfaceFW16.GetRegisters(new int[] { 191,192,193,194});
                     }
                 }
             }
@@ -193,7 +193,7 @@ namespace FW16AutoTestUtility
         private string TestCorrectionMin(bool abort = false)
         {
             string err = null;
-            for (int receiptKind = 1; receiptKind < 4; receiptKind += 2)
+            for (int receiptKind = 1; receiptKind < TestingInterfaceFW16.countReceiptKind; receiptKind += 2)
             {
                 for (int tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                   //перебор видов платежей
                 {
@@ -211,7 +211,7 @@ namespace FW16AutoTestUtility
                         if (TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort) != 0)
                         {
                             err += $"|{(ReceiptKind)receiptKind,12}|{(Native.CmdExecutor.VatCodeType)vatCode,17}|{(Native.CmdExecutor.TenderCode)tenderCode,15}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode],15}|\n";
-                            TestingInterfaceFW16.GetRegisters();
+                            TestingInterfaceFW16.GetRegisters(new int[] { 191, 192, 193, 194 });
                         }
                     }
                 }
@@ -304,7 +304,7 @@ namespace FW16AutoTestUtility
                                 if (TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort) != 0)
                                 {
                                     err += $"|{(ReceiptKind)receiptKind,12}|{(Native.CmdExecutor.VatCodeType)vatCode,17}|{(ItemPaymentKind)itemPaymentKind,17}|{(TestingInterfaceFW16.ItemBy)itemBy,8}|{(Native.CmdExecutor.TenderCode)tenderCode,15}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode],15}|\n";
-                                    TestingInterfaceFW16.GetRegisters();
+                                    TestingInterfaceFW16.GetRegisters(new int[] { 191, 192, 193, 194 });
                                 }
                             }
 

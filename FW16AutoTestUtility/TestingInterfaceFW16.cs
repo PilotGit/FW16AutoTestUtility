@@ -757,13 +757,13 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// считывает все регистры в массив регистров
         /// </summary>
-        public void GetRegisters()
+        public void GetRegisters(int[] arr = null)
         {
             ushort endIndex = 236;
             ushort startIndex = 1;
             for (ushort i = startIndex; i < endIndex; i++)
             {
-                if (inaccessibleRegisters.IndexOf(i) == -1)
+                if (inaccessibleRegisters.IndexOf(i) == -1 && Array.IndexOf(arr,i)==-1)
                 {
                     try
                     {
