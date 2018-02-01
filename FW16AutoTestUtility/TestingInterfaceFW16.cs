@@ -659,6 +659,7 @@ namespace FW16AutoTestUtility
         public int RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
         {
             //endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
+            endIndex = 236;
             string err =$"+-------+------------------+-------------------+\n" +
                 $"|   #   |       test       |        ККТ        |\n" +
                 $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
