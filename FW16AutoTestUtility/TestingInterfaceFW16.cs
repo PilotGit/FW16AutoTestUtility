@@ -46,6 +46,11 @@ namespace FW16AutoTestUtility
         /// </summary>
         public const int countItemBy = 2;
 
+        public int[] registersReciept = {1, 2, 3, 4, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 200, 201, 202, 203, 204, 205, 206, 210, 211, 212, 213, 214, 215, 216, 220, 221, 223, 224, 225, 226, 230, 231, 232, 233, 234, 235, 236 };
+        public int[] registersCorrection = { 5, 7, 51, 52, 53, 54, 55, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, };
+        public int[] registersNFDoc = { 9, 10, 91, 92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 105, 106, 107, 108, 109 };
+
+
         public EcrCtrl ecrCtrl;
         public uint versionFFD = 0;
         decimal[] registersTmp = new decimal[236];                  //массив временных регистров
@@ -356,7 +361,8 @@ namespace FW16AutoTestUtility
                         $"---------------------------------------------------");
                 }
             }
-            return RequestRegisters(111, 120);
+            //return RequestRegisters(111, 120);
+            return RequestRegisters(registersNFDoc);
 
         }
 
@@ -406,7 +412,8 @@ namespace FW16AutoTestUtility
                     document = null;
                 }
             }
-            return RequestRegisters(160, 182); //+ RequestRegisters(111, 120);
+            //return RequestRegisters(160, 182); //+ RequestRegisters(111, 120);
+            return RequestRegisters(registersReciept);
         }
 
         /// <summary>
@@ -454,7 +461,8 @@ namespace FW16AutoTestUtility
                     document = null;
                 }
             }
-            return RequestRegisters(111, 120);
+            //return RequestRegisters(111, 120);
+            return RequestRegisters(registersCorrection);
         }
 
         /// <summary>
@@ -660,7 +668,7 @@ namespace FW16AutoTestUtility
         {
             //endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
             endIndex = 236;
-            string err =$"+-------+------------------+-------------------+\n" +
+            string err = $"+-------+------------------+-------------------+\n" +
                 $"|   #   |       test       |        ККТ        |\n" +
                 $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
@@ -680,7 +688,39 @@ namespace FW16AutoTestUtility
                 }
             }
             Console.Write(((err.Length > 150) ? err : ""));           //логирование
-            Log($"Запрошеные данные с регистров с {startIndex} по {endIndex} {((err.Length > 150) ? "\n"+err :"")}");           //логирование
+            Log($"Запрошеные данные с регистров с {startIndex} по {endIndex} {((err.Length > 150) ? "\n" + err : "")}");           //логирование
+            if (err.Length > 150) return 1;
+            return 0;
+        }
+        
+        /// <summary>
+        /// Сверяет регистры с массивом регистров в указанном диапозоне
+        /// </summary>
+        /// <param name="startIndex">Начальный индекс</param>
+        /// <param name="endIndex">Конечный индекс, не включительно</param>
+        public int RequestRegisters(int[] arr)
+        {
+            string err = $"+-------+------------------+-------------------+\n" +
+                $"|   #   |       test       |        ККТ        |\n" +
+                $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
+            foreach (ushort i in arr)
+            {
+                if (inaccessibleRegisters.IndexOf(i) == -1)
+                {
+                    try
+                    {
+                        decimal tmp = ecrCtrl.Info.GetRegister(i);
+                        if (tmp != registers[i]) { err += $"|{i,7:D}|{registers[i],18:F}|{tmp,19:F}|\n"; }//заполнение ошибки несоотвествия регистров
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Не удолось получить доступ к регистру №" + i + "");
+                        Log($"Не удолось получить доступ к регистру №{i}");
+                    }
+                }
+            }
+            Console.Write(((err.Length > 150) ? err : ""));           //логирование
+            Log($"Запрошеные данные с регистров{((err.Length > 150) ? "\n" + err : "")}");           //логирование
             if (err.Length > 150) return 1;
             return 0;
         }
@@ -712,6 +752,7 @@ namespace FW16AutoTestUtility
             Console.Write(((err.Length > 150) ? err : ""));           //логирование
             Log($"Запрошеные данные с счётчиков с {startIndex} по {endIndex} {((err.Length > 150) ? "\n" + err : "")}");           //логирование
         }
+
 
         /// <summary>
         /// считывает все регистры в массив регистров
