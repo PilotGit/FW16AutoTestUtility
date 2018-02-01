@@ -357,6 +357,7 @@ namespace FW16AutoTestUtility
                 }
             }
             return RequestRegisters(111, 120);
+
         }
 
         /// <summary>
@@ -405,7 +406,7 @@ namespace FW16AutoTestUtility
                     document = null;
                 }
             }
-            return RequestRegisters(160, 182) + RequestRegisters(111, 120);
+            return RequestRegisters(160, 182); //+ RequestRegisters(111, 120);
         }
 
         /// <summary>
@@ -657,7 +658,7 @@ namespace FW16AutoTestUtility
         /// <param name="endIndex">Конечный индекс, не включительно</param>
         public int RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
         {
-            endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
+            //endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
             string err =$"+-------+------------------+-------------------+\n" +
                 $"|   #   |       test       |        ККТ        |\n" +
                 $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
@@ -725,6 +726,7 @@ namespace FW16AutoTestUtility
                     try
                     {
                         registers[i] = ecrCtrl.Info.GetRegister(i);             //запрос значений регистров из ККТ
+                        Log($"Программный регистр №{i,4} получил значение {registers[i]}");
                     }
                     catch (Exception)
                     {
@@ -750,6 +752,7 @@ namespace FW16AutoTestUtility
                 try
                 {
                     counters[i] = ecrCtrl.Info.GetCounter(i);               //запрос значений регистров из ККТ
+                    Log($"Программный счётчик №{i,3} получил значение {counters[i]}");
                 }
                 catch (Exception)
                 {
