@@ -468,7 +468,7 @@ namespace FW16AutoTestUtility
         /// <param name="kind">Тип добавляемого товара (товар,услуга..)</param>
         public void AddEntry(Receipt document, ReceiptKind receiptKind, string name, decimal count, Native.CmdExecutor.VatCodeType vatCode, ItemBy itemBy, decimal money, ItemPaymentKind paymentKind = ItemPaymentKind.Payoff, ItemFlags kind = ItemFlags.Regular)
         {
-                string code = random.Next().ToString();
+            string code = random.Next().ToString();
             try
             {
                 ReceiptEntry receiptEntry;                                                                                         //товар
@@ -477,8 +477,10 @@ namespace FW16AutoTestUtility
                 receiptEntry.PaymentKind = paymentKind;                                                                                     //спооб рассчёта
                 receiptEntry.Kind = kind;                                                                                                   //тип добавляемого товара
                 document.AddEntry(receiptEntry);                                                                                            //добавления товара в чек
+
                 Log($"\t\t\tТовар добавлен\n" +
                     $"\t\t\t {code,15}|{name,12}|{itemBy,6}|{count,7}|{money,8}|{vatCode,15}");
+
                 registersTmp[(this.receiptKind[receiptKind] - 1) * 10 + this.vatCode[vatCode] - 1 + 120] += receiptEntry.Cost;              //добаление в регистр (120-125,130-135,140-145,150-155) суммы по ставке НДС
                 if (this.vatCode[vatCode] != 3 && this.vatCode[vatCode] != 4)                                                               //проверка на нулевые ставки НДС
                     registersTmp[(this.receiptKind[receiptKind] - 1) * 10 + (this.vatCode[vatCode] > 4 ? this.vatCode[vatCode] - 2 : this.vatCode[vatCode]) + 120 + 5] += receiptEntry.VatAmount;   //добавление в регистр (126-129,136-139,146-149,156-159) суммы НДС 
@@ -489,7 +491,8 @@ namespace FW16AutoTestUtility
                 if (this.vatCode[vatCode] != 3 && this.vatCode[vatCode] != 4)
                     registersTmp[(this.vatCode[vatCode] > 4 ? this.vatCode[vatCode] - 2 : this.vatCode[vatCode]) + 160 + 6] += receiptEntry.VatAmount;                                              //добавление в регситр (167-170) суммы НДС открытого документа 
                 registersTmp[171]++;                                                                                                        //Добавление в регситр (171)  количество товарных позиций
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 Log($"\t\t\tНе удалось добавить товар\n" +
                     $"\t\t\t {code,15}|{name,12}|{itemBy,5}|{count,7}|{money,8}|{vatCode,13}\n" +
@@ -507,25 +510,36 @@ namespace FW16AutoTestUtility
         /// <param name="sum">Сумма оплаты</param>
         public void AddPayment(Receipt document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
-            document.AddPayment(tenderCode, sum);                                                                                                                                       //добавление оплаты 
-
-            registersTmp[this.receiptKind[receiptKind]] += sum;                                                                                                                         //добавление в регистры (1-4) суммы по типу операции
-            registersTmp[this.receiptKind[receiptKind] * 10 + 1 + (int)tenderCode] += sum;                                                                                              //добавление в регистры (11-18, 21-28, 31-38, 41-48) суммы по номеру платежа
-            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[this.receiptKind[receiptKind] * 10 + 1 + 8] += sum;             //добавление в регистры (19, 29, 39, 49) суммы электрооного типа платежа
-
-            registersTmp[(int)tenderCode + 172] += sum;                                                                                                                                 //добавление в регистры (172-179) суммы открытого документа по номеру платежа
-            switch (this.tenderCodeType[tenderCode])
+            try
             {
-                case 1: registersTmp[181] += sum; break;                                                                                                                                //добавление в регистр (181) суммы открытого документа электронного типа платежа
-                case 0: registersTmp[180] += sum; break;                                                                                                                                //добавление в регистр (180) суммы открытого документа наличного типа платежа
+                document.AddPayment(tenderCode, sum);                                                                                                                                       //добавление оплаты 
 
-                default:
-                    break;
+                Log($"\t\t\tОплата добавлена\n" +
+                    $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}");
+
+                registersTmp[this.receiptKind[receiptKind]] += sum;                                                                                                                         //добавление в регистры (1-4) суммы по типу операции
+                registersTmp[this.receiptKind[receiptKind] * 10 + 1 + (int)tenderCode] += sum;                                                                                              //добавление в регистры (11-18, 21-28, 31-38, 41-48) суммы по номеру платежа
+                if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[this.receiptKind[receiptKind] * 10 + 1 + 8] += sum;             //добавление в регистры (19, 29, 39, 49) суммы электрооного типа платежа
+
+                registersTmp[(int)tenderCode + 172] += sum;                                                                                                                                 //добавление в регистры (172-179) суммы открытого документа по номеру платежа
+                switch (this.tenderCodeType[tenderCode])
+                {
+                    case 1: registersTmp[181] += sum; break;                                                                                                                                //добавление в регистр (181) суммы открытого документа электронного типа платежа
+                    case 0: registersTmp[180] += sum; break;                                                                                                                                //добавление в регистр (180) суммы открытого документа наличного типа платежа
+                    default:
+                        break;
+                }
+                registersTmp[(int)tenderCode + 111] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
+                if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистр (119) суммы электрооного типа платежа
+
+                registersTmp[this.receiptKind[receiptKind] + 190] += sum;                                                                                                                   //добавление в регистры (191-194) накопительный регистр по типу операции
             }
-            registersTmp[(int)tenderCode + 111] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
-            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистр (119) суммы электрооного типа платежа
-
-            registersTmp[this.receiptKind[receiptKind] + 190] += sum;                                                                                                                   //добавление в регистры (191-194) накопительный регистр по типу операции
+            catch (Exception ex)
+            {
+                Log($"\t\t\tНе удалось добавить оплату\n" +
+                    $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}\n" +
+                    $"\t\t\t Exception={ex.Message}");
+            }
         }
 
         /// <summary>
@@ -535,15 +549,27 @@ namespace FW16AutoTestUtility
         /// <param name="receiptKind">Тип чека (Приход, изъятие)</param>
         /// <param name="tenderCode">Тип оплаты</param>
         /// <param name="sum">Сумма</param>
-        public void AddTender(Fw16.Ecr.Correction document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        public void AddTender(Correction document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
-            document.AddTender(tenderCode, sum);
-            registersTmp[tenderCodeType[tenderCode] + this.receiptKind[receiptKind] * 10 + 41] += sum;                                                                                  //добавление в регистры (51-55,71-75) суммы по типу платежа
-            registersTmp[this.receiptKind[receiptKind] + 4] += sum;                                                                                                                     //добавление в регистры (5,7) суммы по типу чека коррекции
+            try
+            {
+                document.AddTender(tenderCode, sum);
 
+                Log($"\t\t\tСумма коррекции добавлена\n" +
+                        $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}");
 
-            registersTmp[(int)tenderCode + 111] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
-            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистры (119) суммы электрооного типа платежа
+                registersTmp[tenderCodeType[tenderCode] + this.receiptKind[receiptKind] * 10 + 41] += sum;                                                                                  //добавление в регистры (51-55,71-75) суммы по типу платежа
+                registersTmp[this.receiptKind[receiptKind] + 4] += sum;                                                                                                                     //добавление в регистры (5,7) суммы по типу чека коррекции
+
+                registersTmp[(int)tenderCode + 111] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
+                if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистры (119) суммы электрооного типа платежа
+            }
+            catch (Exception ex)
+            {
+                Log($"\t\t\tНе удалось добавить сумму коррекции\n" +
+                    $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}\n" +
+                    $"\t\t\t Exception={ex.Message}");
+            }
         }
 
         /// <summary>
@@ -553,21 +579,33 @@ namespace FW16AutoTestUtility
         /// <param name="nfDocType">Тип нефискального документа</param>
         /// <param name="tenderCode">Тип оплаты</param>
         /// <param name="sum">Сумма</param>
-        public void AddTender(Fw16.Ecr.NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        public void AddTender(NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
-            var tender = new Tender
+            try
             {
-                Amount = sum,
-                Code = tenderCode
-            };
-            document.AddTender(tender);
+                var tender = new Tender
+                {
+                    Amount = sum,
+                    Code = tenderCode
+                };
+                document.AddTender(tender);
 
-            registersTmp[this.nfDocType[nfDocType] + 8] += sum;                                                                                                                                 //добавление в регистры (9,10) суммы по типу нефискального документа
-            registersTmp[(int)tenderCode + this.nfDocType[nfDocType] * 10 + 81] += sum;                                                                                                         //добавление в регистры (91-98,101-108) суммы по номеру платежа
-            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[this.nfDocType[nfDocType] * 10 + 89] += sum;                            //добавление в регистры (99,109) суммы электронных типов платежей
+                Log($"\t\t\tСумма добавлена\n" +
+                        $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}");
 
-            registersTmp[(int)tenderCode + 111] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum;                                                                               //добавление в регистры (111,118) суммы по номеру платежа
-            if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum;  //добавление в регистры (119) суммы электронных типов платежей
+                registersTmp[this.nfDocType[nfDocType] + 8] += sum;                                                                                                                                 //добавление в регистры (9,10) суммы по типу нефискального документа
+                registersTmp[(int)tenderCode + this.nfDocType[nfDocType] * 10 + 81] += sum;                                                                                                         //добавление в регистры (91-98,101-108) суммы по номеру платежа
+                if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[this.nfDocType[nfDocType] * 10 + 89] += sum;                            //добавление в регистры (99,109) суммы электронных типов платежей
+
+                registersTmp[(int)tenderCode + 111] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum;                                                                               //добавление в регистры (111,118) суммы по номеру платежа
+                if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum;  //добавление в регистры (119) суммы электронных типов платежей
+            }
+            catch (Exception ex)
+            {
+                Log($"\t\t\tНе удалось добавить сумму\n" +
+                    $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}\n" +
+                    $"\t\t\t Exception={ex.Message}");
+            }
         }
 
         /// <summary>
@@ -577,19 +615,31 @@ namespace FW16AutoTestUtility
         /// <param name="receiptKind">Тип чека (Приход, изъятие)</param>
         /// <param name="vatCode">Ставка НДС</param>
         /// <param name="sum">Сумма</param>
-        public void AddAmount(Fw16.Ecr.Correction document, ReceiptKind receiptKind, VatCode vatCode, decimal sum)
+        public void AddAmount(Correction document, ReceiptKind receiptKind, VatCode vatCode, decimal sum)
         {
-            document.AddAmount(vatCode, sum);
-
-            registersTmp[this.receiptKind[receiptKind] * 10 + this.vatCode2[vatCode] + 50] += sum;                                                                      //добавление в регистры (60-65,80-85) суммы по ставкам НДС
-            switch (this.vatCode2[vatCode])
+            try
             {
-                case 1: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;               //добавление в регистры (66,86) суммы НДС
-                case 5: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;               //добавление в регистры (68,88) суммы НДС
-                case 2: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;           //добавление в регистры (67,87) суммы НДС
-                case 6: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;           //добавление в регистры (69,89) суммы НДС
-                default:
-                    break;
+                document.AddAmount(vatCode, sum);
+
+                Log($"\t\t\tСумма коррекции добавлена\n" +
+                    $"\t\t\t {vatCode,13}|{sum,8}");
+
+                registersTmp[this.receiptKind[receiptKind] * 10 + this.vatCode2[vatCode] + 50] += sum;                                                                      //добавление в регистры (60-65,80-85) суммы по ставкам НДС
+                switch (this.vatCode2[vatCode])
+                {
+                    case 1: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;               //добавление в регистры (66,86) суммы НДС
+                    case 5: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;               //добавление в регистры (68,88) суммы НДС
+                    case 2: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;           //добавление в регистры (67,87) суммы НДС
+                    case 6: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode] - 2) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;           //добавление в регистры (69,89) суммы НДС
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"\t\t\tНе удалось добавить сумму коррекции\n" +
+                    $"\t\t\t {vatCode,13}|{sum,8}\n"+
+                    $"\t\t\t Exception={ex.Message}");
             }
         }
 
