@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -72,6 +73,7 @@ namespace FW16AutoTestUtility
                 { Native.CmdExecutor.VatCodeType.Vat10Included,6 },
             };
 
+
         /// <summary>
         /// Соответствие типа НДС его номеру
         /// </summary>
@@ -135,18 +137,28 @@ namespace FW16AutoTestUtility
             {Native.CmdExecutor.NFDocType.Outcome,2 },
             {Native.CmdExecutor.NFDocType.Report,3 }
         };
+        private string fileName;
 
         public TestingInterfaceFW16(out EcrCtrl ecrCtrl)
         {
+            fileName = $"log\\log{DateTime.Now.ToString("ddMMyy")}.log";
+            if (!Directory.Exists("log")) { Directory.CreateDirectory("log"); }
+            if (!File.Exists(fileName)) File.Create(fileName).Close();
+
             this.ecrCtrl = ecrCtrl = new EcrCtrl();
             if (ConnectToFW() == 0)
             {
                 tenderCodeType = new Dictionary<Native.CmdExecutor.TenderCode, int>();
                 var tenderList = ecrCtrl.Info.GetTendersList().GetEnumerator();                                         //получение коллекции соответствий кода платежа типу платежа
+
+                Log("Получено соответствие номеров платежа и типов");
+
                 for (int i = 0; i < countTenderCode; i++)
                 {
                     tenderList.MoveNext();                                                                              //перебор коллекции
                     tenderCodeType.Add((Native.CmdExecutor.TenderCode)i, tenderType[tenderList.Current.Mode]);          //создание соответствия кода платежа типу 
+
+                    Log($"|{i,3}|{tenderList.Current.Mode,10}|");
                 }
             }
         }
@@ -161,11 +173,17 @@ namespace FW16AutoTestUtility
             try
             {
                 ecrCtrl.Init(serialPort, baudRate);             //Подключчение по порту и частоте
+                Console.WriteLine($"Произведено подключение к ККТ. Port={serialPort} Rate={baudRate}");
+                Log($"Произведено подключение к ККТ.\n" +
+                    $" Port={serialPort}\n" +
+                    $" Rate={baudRate}");
                 ShowInformation();
             }
             catch (Exception excep)
             {
                 Console.WriteLine(excep.Message);                 //вывод ошибки доступа порта
+                Log($"Не удалось подключиться к ККТ.\n" +
+                    $" Message={excep.Message}");
                 return 1;
             }
             return 0;
@@ -173,11 +191,44 @@ namespace FW16AutoTestUtility
 
         void ShowInformation()
         {
-            Console.WriteLine("ККТ: подключено");
-            Console.WriteLine("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild);
-            Console.WriteLine("Код firmware: " + ecrCtrl.Info.FactoryInfo.FwType);
-            Console.WriteLine("Серийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id);
-            Console.WriteLine("Модель: " + ecrCtrl.Info.EcrInfo.Model);
+            Console.WriteLine("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
+                "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
+                "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
+                "\nМодель: " + ecrCtrl.Info.EcrInfo.Model);
+            Log("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
+                "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
+                "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
+                "\nМодель: " + ecrCtrl.Info.EcrInfo.Model + "");
+        }
+
+
+        public void OpenShift(string nameOperator)
+        {
+            try
+            {
+                ecrCtrl.Shift.Open(nameOperator);
+                Log($"\tСмена открыта");
+            }
+            catch (Exception ex)
+            {
+                Log($"\tНе удалось открыть смену.\n" +
+                    $"\t Exception={ex.Message}");
+            }
+        }
+
+        internal void CloseShift(string nameOperator)
+        {
+            try
+            {
+                ecrCtrl.Shift.Close(nameOperator);
+                Log($"\tСмена закрыта");
+            }
+            catch (Exception ex)
+            {
+                Log($"\tНе удалось закрыт смену.\n" +
+                    $"\t Exception={ex.Message}");
+            }
+
         }
 
         /// <summary>
@@ -187,7 +238,19 @@ namespace FW16AutoTestUtility
         /// <param name="nfDocType">Тип нефискального документа</param>
         public void StartDocument(out NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType)
         {
-            document = ecrCtrl.Shift.BeginNonFiscal(nfDocType); //открытие нефиксального документа
+            try
+            {
+                document = ecrCtrl.Shift.BeginNonFiscal(nfDocType); //открытие нефиксального документа
+                Log($"\t\tНефискальный документ открыт.\n" +
+                    $"\t\t Type={nfDocType}");
+            }
+            catch (Exception ex)
+            {
+                Log($"\t\tНе удалось открыть нефискальный документ.\n" +
+                    $"\t\t Type={nfDocType}\n" +
+                    $"\t\t Exception={ex.Message}");
+                document = null;
+            }
             SetValue(registersTmp, 0);
         }
 
@@ -199,7 +262,19 @@ namespace FW16AutoTestUtility
         /// <param name="receiptKind">Тип чека коррекции</param>
         public void StartDocument(out Correction document, string nameOerator, ReceiptKind receiptKind)
         {
-            document = ecrCtrl.Shift.BeginCorrection(nameOerator, receiptKind);
+            try
+            {
+                document = ecrCtrl.Shift.BeginCorrection(nameOerator, receiptKind);
+                Log($"\t\tЧек коррекции открыт.\n" +
+                    $"\t\t Type={receiptKind}");
+            }
+            catch (Exception ex)
+            {
+                Log($"\t\tНе удалось открыть чек коррекции.\n" +
+                    $"\t\t Kind={receiptKind}\n" +
+                    $"\t\t Exception={ex.Message}");
+                document = null;
+            }
             SetValue(registersTmp, 0);
         }
 
@@ -211,12 +286,26 @@ namespace FW16AutoTestUtility
         /// <param name="receiptKind">Тип чека</param>
         public void StartDocument(out Receipt document, string nameOerator, ReceiptKind receiptKind)
         {
-            document = ecrCtrl.Shift.BeginReceipt(nameOerator, receiptKind, new
+            try
             {
-                Taxation = Fs.Native.TaxationType.Agro,         //налогообложение по умолчанию
-                CustomerAddress = "qwe@ewq.xxx",                //адрес получателя
-                SenderAddress = "ewq@qwe.yyy"                   //адрес отправтеля
-            });
+                document = ecrCtrl.Shift.BeginReceipt(nameOerator, receiptKind, new
+                {
+                    Taxation = Fs.Native.TaxationType.Agro,         //налогообложение по умолчанию
+                    CustomerAddress = "qwe@ewq.xxx",                //адрес получателя
+                    SenderAddress = "ewq@qwe.yyy"                   //адрес отправтеля
+                });
+                Log($"\t\tЧек открыт.\n" +
+                    $"\t\t Operator={nameOerator}\n" +
+                    $"\t\t Type={receiptKind}");
+            }
+            catch (Exception ex)
+            {
+                Log($"\t\tНе удалось открыть чек.\n" +
+                    $"\t\t Kind={receiptKind}\n" +
+                    $"\t\t Operator={nameOerator}\n" +
+                    $"\t\t Exception={ex.Message}");
+                document = null;
+            }
             SetValue(registers, 0, 160, 182);
             SetValue(registersTmp, 0);
         }
@@ -231,16 +320,39 @@ namespace FW16AutoTestUtility
         {
             if (abort)
             {
-                ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);                //отмена нефискального документа
-                Console.WriteLine("Отменён нефиксальный документ типа " + nfDocType + "");      //логирование
-                counters[this.nfDocType[nfDocType] + 8 + 11]++;
+                try
+                {
+                    ecrCtrl.Service.AbortDoc(Native.CmdExecutor.DocEndMode.Default);                //отмена нефискального документа
+                    Console.WriteLine("Отменён нефиксальный документ типа " + nfDocType + "");      //логирование
+                    Log($"\t\tНефискальный документ отменён.\n" +
+                        $"---------------------------------------------------");
+                    counters[this.nfDocType[nfDocType] + 8 + 11]++;
+                }
+                catch (Exception ex)
+                {
+                    Log($"\t\tНе удалось отменить нефискальный документ.\n" +
+                        $"\t\t Exception={ex.Message}" +
+                        $"---------------------------------------------------");
+                    document = null;
+                }
             }
             else
             {
-                document.Complete(Native.CmdExecutor.DocEndMode.Default);                       //закрытие нефиксального документа
-                Console.WriteLine("Оформлен нефиксальный документ типа " + nfDocType + "");     //логирование
-                counters[this.nfDocType[nfDocType] + 8]++;
-                AddRegistersTmp();
+                try
+                {
+                    document.Complete(Native.CmdExecutor.DocEndMode.Default);                       //закрытие нефиксального документа
+                    Console.WriteLine("Оформлен нефиксальный документ типа " + nfDocType + "");     //логирование
+                    Log($"\t\tНефискальный докумен оформлент.\n" +
+                        $"---------------------------------------------------");
+                    counters[this.nfDocType[nfDocType] + 8]++;
+                    AddRegistersTmp();
+                }
+                catch (Exception ex)
+                {
+                    Log($"\t\tНе удалось оформить нефискальный документ.\n" +
+                        $"\t\t Exception={ex.Message}" +
+                        $"---------------------------------------------------");
+                }
             }
             return RequestRegisters(111, 120);
         }
@@ -255,20 +367,43 @@ namespace FW16AutoTestUtility
         {
             if (abort)
             {
-                document.Abort();                                                               //отмена документа
-                Console.WriteLine("Отменён чек типа " + receiptKind + "");                      //логирование
-                counters[this.receiptKind[receiptKind] + 11]++;                                 //увеличение счётчика (12-15) отмены соотвествующего типа чека
-
+                try
+                {
+                    document.Abort();                                                               //отмена документа
+                    Console.WriteLine("Отменён чек типа " + receiptKind + "");                      //логирование
+                    counters[this.receiptKind[receiptKind] + 11]++;                                 //увеличение счётчика (12-15) отмены по типу чека
+                    Log($"\t\tЧек отменён.\n" +
+                        $"---------------------------------------------------");
+                }
+                catch (Exception ex)
+                {
+                    Log($"\t\tНе удалось отменить чек.\n" +
+                        $"\t\t Exception={ex.Message}" +
+                        $"---------------------------------------------------");
+                    document = null;
+                }
             }
             else
             {
-                document.Complete();                                                            //закрытие чека
-                counters[this.receiptKind[receiptKind]]++;                                      //учеличение счётчика (1-4) оформленного соответсвющего типа чека
-                SetValue(registers, 0, 160, 182);
-                Console.WriteLine("Оформлен чек типа " + receiptKind + "");                     //логирование
-                AddRegistersTmp();
+                try
+                {
+                    document.Complete();                                                            //закрытие чека
+                    counters[this.receiptKind[receiptKind]]++;                                      //учеличение счётчика (1-4) оформления по типу чека
+                    SetValue(registers, 0, 160, 182);
+                    Console.WriteLine("Оформлен чек типа " + receiptKind + "");                     //логирование
+                    AddRegistersTmp();
+                    Log($"\t\tЧек оформлен.\n" +
+                        $"---------------------------------------------------");
+                }
+                catch (Exception ex)
+                {
+                    Log($"\t\tНе удалось оформить чек.\n" +
+                        $"\t\t Exception={ex.Message}" +
+                        $"---------------------------------------------------");
+                    document = null;
+                }
             }
-            return RequestRegisters(160, 182)+RequestRegisters(111, 120);
+            return RequestRegisters(160, 182) + RequestRegisters(111, 120);
         }
 
         /// <summary>
@@ -431,7 +566,7 @@ namespace FW16AutoTestUtility
         public int RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
         {
             endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
-            string err = "\n" +$"+-------+------------------+-------------------+\n" +
+            string err = "\n" + $"+-------+------------------+-------------------+\n" +
                 $"|   #   |       test       |        ККТ        |\n" +
                 $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
@@ -553,5 +688,13 @@ namespace FW16AutoTestUtility
             }
         }
 
+        private void Log(string message)
+        {
+            string[] messages = message.Split('\n');
+            foreach (string i in messages)
+            {
+                File.AppendAllText(fileName, $"{DateTime.Now.ToString("HH:mm:ss.ffff")}\t{i}\n");
+            }
+        }
     }
 }

@@ -54,8 +54,8 @@ namespace FW16AutoTestUtility
         }
 
         public void SimpleTest()                            //функция прогона по всем видам чеков и чеков коррекции
-        {
-            ecrCtrl.Shift.Open(nameOperator);                //открытие смены для этого теста
+        {              
+            TestingInterfaceFW16.OpenShift(nameOperator);   //открытие смены для этого теста
             TestingInterfaceFW16.GetRegisters();
             TestingInterfaceFW16.GetCounters();
             if (TestReceiptMax() != 0)//вызов функции тестирования чека
@@ -78,7 +78,8 @@ namespace FW16AutoTestUtility
             }
             TestReceiptMax(true);                           //вызов функции тестирования чека c отменой.
             TestNonFiscalMax(true);                            //вызов функции нефискального документа с отменой
-            ecrCtrl.Shift.Close(nameOperator);              //закрытие смены этого теста
+                          //закрытие смены этого теста
+            TestingInterfaceFW16.CloseShift(nameOperator);   //Закрытие смены для этого теста
 
             TestingInterfaceFW16.RequestRegisters();
             TestingInterfaceFW16.RequestCounters();
