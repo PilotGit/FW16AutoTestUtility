@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Fw16;
@@ -45,19 +47,37 @@ namespace FW16AutoTestUtility
         /// Количество тпов добавления товара
         /// </summary>
         public const int countItemBy = 2;
+        /// <summary>
+        /// Длинна описания регистра или счётчика
+        /// </summary>
+        public const int lenStringDiscription = 50;
+        /// <summary>
+        /// Количество регистров
+        /// </summary>
+        public const ushort countRegisters = 236;
+        /// <summary>
+        /// Количество счётчиков
+        /// </summary>
+        public const ushort countCounters = 22;
+
+        private string fileName;
 
         private int[] registersReciept = { 1, 2, 3, 4, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 200, 201, 202, 203, 204, 205, 206, 210, 211, 212, 213, 214, 215, 216, 220, 221, 223, 224, 225, 226, 230, 231, 232, 233, 234, 235, 236 };
         private int[] registersCorrection = { 5, 7, 51, 52, 53, 54, 55, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, };
         private int[] registersNFDoc = { 9, 10, 91, 92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 105, 106, 107, 108, 109 };
         private int[] registersСumulative = { 191, 192, 193, 194 };
 
+        public int[] RegistersReciept { get => registersReciept; }
+        public int[] RegistersCorrection { get => registersCorrection; }
+        public int[] RegistersNFDoc { get => registersNFDoc; }
+        public int[] RegistersСumulative { get => registersСumulative; }
 
         public EcrCtrl ecrCtrl;
-        public uint versionFFD = 0;                                 //Версия ФФД
-        decimal[] registersTmp = new decimal[237];                  //массив временных регистров
-        public decimal[] registers = new decimal[237];              //массив регистров
-        public int[] counters = new int[23];                        //массив счётчиков
-        public List<int> inaccessibleRegisters = new List<int>();   //недоступные регистры
+        public uint versionFFD = 0;                                                 //Версия ФФД
+        decimal[] registersTmp = new decimal[countRegisters + 1];                   //массив временных регистров
+        public decimal[] registers = new decimal[countRegisters + 1];               //массив регистров
+        public int[] counters = new int[countCounters+1];                           //массив счётчиков
+        public List<int> inaccessibleRegisters = new List<int>();                   //недоступные регистры
         private Random random = new Random();
 
         public enum ItemBy
@@ -77,7 +97,6 @@ namespace FW16AutoTestUtility
                 { Native.CmdExecutor.VatCodeType.Vat18Included,5 },
                 { Native.CmdExecutor.VatCodeType.Vat10Included,6 },
             };
-
 
         /// <summary>
         /// Соответствие типа НДС его номеру
@@ -142,12 +161,6 @@ namespace FW16AutoTestUtility
             {Native.CmdExecutor.NFDocType.Outcome,2 },
             {Native.CmdExecutor.NFDocType.Report,3 }
         };
-        private string fileName;
-
-        public int[] RegistersReciept { get => registersReciept; }
-        public int[] RegistersCorrection { get => registersCorrection; }
-        public int[] RegistersNFDoc { get => registersNFDoc; }
-        public int[] RegistersСumulative { get => registersСumulative; }
 
         public TestingInterfaceFW16(out EcrCtrl ecrCtrl)
         {
@@ -696,8 +709,8 @@ namespace FW16AutoTestUtility
         /// <param name="endIndex">Конечный индекс, не включительно</param>
         public int RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
         {
-            //endIndex = endIndex > 0 ? endIndex : (ushort)236;                                                           //проверка конечного значения если 0, то до конца
-            endIndex = 236;
+            //endIndex = endIndex > 0 ? endIndex : (ushort)(countRegisters + 1);                                                           //проверка конечного значения если 0, то до конца
+            endIndex = countRegisters + 1;
             string err = $"+-------+------------------+-------------------+\n" +
                 $"|   #   |       test       |        ККТ        |\n" +
                 $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
@@ -717,9 +730,9 @@ namespace FW16AutoTestUtility
                     }
                 }
             }
-            Console.Write(((err.Length > 150) ? err : ""));           //логирование
-            Log($"Запрошеные данные с регистров с {startIndex} по {endIndex} {((err.Length > 150) ? "\n" + err : "")}");           //логирование
-            if (err.Length > 150) return 1;
+            Console.Write(((err.Length > 304) ? err : ""));           //логирование
+            Log($"Запрошеные данные с регистров с {startIndex} по {endIndex} {((err.Length > 304) ? "\n" + err : "")}");           //логирование
+            if (err.Length > 304) return 1;
             return 0;
         }
 
@@ -730,9 +743,9 @@ namespace FW16AutoTestUtility
         /// <returns></returns>
         public int RequestRegisters(int[] arr)
         {
-            string err = $"+-------+------------------+-------------------+\n" +
-                         $"|   #   |       test       |        ККТ        |\n" +
-                         $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
+            string err = $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
+                         $"|   #   |{"discription",lenStringDiscription}|       test       |        ККТ        |\n" +
+                         $"+-------+--------------------------------------------------+------------------+-------------------+\n";                                                                                          //строка ошибки заполняемая при несоответсвии регистров
             foreach (ushort i in arr)
             {
                 if (inaccessibleRegisters.IndexOf(i) == -1)
@@ -740,18 +753,28 @@ namespace FW16AutoTestUtility
                     try
                     {
                         decimal tmp = ecrCtrl.Info.GetRegister(i);
-                        if (tmp != registers[i]) { err += $"|{i,7:D}|{registers[i],18:F}|{tmp,19:F}|\n"; }//заполнение ошибки несоотвествия регистров
+                        if (tmp != registers[i])                                                                                                //Проверка расходения регистров
+                        {
+                            string discription = _GetDescription((Native.CmdExecutor.RegisterCode)i);                                           //Получение описания регистра
+                            int startPosition = 0;                                                                                              //Стартовая позция вывода описания
+                            err += $"|{i,7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{registers[i],18:F}|{tmp,19:F}|\n";   //Вывод первой строки описания
+                            for (startPosition = lenStringDiscription; startPosition < discription.Length; startPosition += lenStringDiscription)
+                            {
+                                err += $"|{"",7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{"",18:F}|{"",19:F}|\n";         //Вывод последующих строк описания, если необходимо
+                            }
+                        }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
                         Console.WriteLine("Не удалось получить доступ к регистру №" + i + "");
-                        Log($"Не удалось получить доступ к регистру №{i}");
+                        Log($"Не удалось получить доступ к регистру №{i}\n" +
+                            $" Exception={ex.Message}");
                     }
                 }
             }
-            Console.Write(((err.Length > 150) ? err : ""));                                         //логирование
-            Log($"Запрошеные данные с регистров{((err.Length > 150) ? "\n" + err : "")}");          //логирование
-            if (err.Length > 150) return 1;
+            Console.Write(((err.Length > 304) ? err : ""));                                         //логирование
+            Log($"Запрошеные данные с регистров{((err.Length > 304) ? "\n" + err : "")}");          //логирование
+            if (err.Length > 304) return 1;
             return 0;
         }
 
@@ -762,16 +785,27 @@ namespace FW16AutoTestUtility
         /// <param name="endIndex">Конечный индекс, не включительно</param>
         public void RequestCounters(ushort startIndex = 1, ushort endIndex = 0)
         {
-            endIndex = endIndex > 0 ? endIndex : (ushort)23;                                                            //проверка конечного значения если 0, то до конца
-            string err = $"+-------+------------------+-------------------+\n" +
-                $"|   #   |       test       |        ККТ        |\n" +
-                $"+-------+------------------+-------------------+\n";                                                                                              //строка ошибки заполняемая при несоответсвии регистров
+            endIndex = endIndex > 0 ? endIndex : (ushort)(countCounters+1);                                                            //проверка конечного значения если 0, то до конца
+            string err = $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
+                $"|   #   |{"discription",lenStringDiscription}|       test       |        ККТ        |\n" +
+                $"+-------+--------------------------------------------------+------------------+-------------------+\n";                                                                                              //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
             {
                 try
                 {
                     int tmp = ecrCtrl.Info.GetCounter(i);
-                    if (tmp != counters[i]) { err += $"|{i,7:D}|{counters[i],18:F}|{tmp,19:F}|\n"; ; }    //Зполнение ошибки несоотвествия счётчиков
+                    if (tmp != counters[i])                                                                                                                 //Проверка расхождения счётчиков
+                    {
+                        string discription = _GetDescription((Native.CmdExecutor.CounterCode)i);                                                            //Получение описания счётчика
+                        int startPosition = 0;                                                                                                              //Стартовая позиция с которой выводится строка описания
+                        err += $"|{i,7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{counters[i],18:F}|{tmp,19:F}|\n";    //Вывод первой строки описания счётчика
+                        for (startPosition = lenStringDiscription; startPosition < discription.Length; startPosition += lenStringDiscription)
+                        {
+                            err += $"|{"",7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{"",18:F}|{"",19:F}|\n";         //Вывод последующих строк описания счётчика, если необходимо
+                        }
+
+                    }
+
                 }
                 catch (Exception)
                 {
@@ -779,8 +813,8 @@ namespace FW16AutoTestUtility
                     Log($"Не удалось получить доступ к счётчику №{i}");
                 }
             }
-            Console.Write(((err.Length > 150) ? err : ""));           //логирование
-            Log($"Запрошеные данные с счётчиков с {startIndex} по {endIndex} {((err.Length > 150) ? "\n" + err : "")}");           //логирование
+            Console.Write(((err.Length > 304) ? err : ""));           //логирование
+            Log($"Запрошеные данные с счётчиков с {startIndex} по {endIndex} {((err.Length > 304) ? "\n" + err : "")}");           //логирование
         }
 
 
@@ -790,7 +824,7 @@ namespace FW16AutoTestUtility
         /// <param name="arr">Массив пропускаемых регистров</param>
         public void GetRegisters(int[] arr = null)
         {
-            ushort endIndex = 237;
+            ushort endIndex = countRegisters + 1;
             ushort startIndex = 1;
             if (arr == null) arr = new int[] { -1 };
             for (ushort i = startIndex; i < endIndex; i++)
@@ -827,7 +861,7 @@ namespace FW16AutoTestUtility
         /// </summary>
         public void GetCounters()
         {
-            ushort endIndex = 23;
+            ushort endIndex = countCounters+1;
             ushort startIndex = 1;
             for (ushort i = startIndex; i < endIndex; i++)
             {
@@ -851,7 +885,7 @@ namespace FW16AutoTestUtility
         /// </summary>
         public void AddRegistersTmp()
         {
-            ushort endIndex = 237;
+            ushort endIndex = countRegisters + 1;
             ushort startIndex = 1;
             for (int i = startIndex; i < endIndex; i++)
             {
@@ -887,6 +921,21 @@ namespace FW16AutoTestUtility
             {
                 File.AppendAllText(fileName, $"{DateTime.Now.ToString("HH:mm:ss.ffff")}\t{i}\r\n");
             }
+
+        }
+
+        internal static string _GetDescription(Enum value)
+        {
+            FieldInfo field = value.GetType().GetField(value.ToString());
+
+            if (field == null)
+                return String.Format("<{0}>", value);
+
+            DescriptionAttribute attribute
+                    = Attribute.GetCustomAttribute(field, typeof(DescriptionAttribute)) as DescriptionAttribute;
+
+            return attribute?.Description;
+
         }
     }
 }
