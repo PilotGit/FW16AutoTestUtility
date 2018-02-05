@@ -46,17 +46,18 @@ namespace FW16AutoTestUtility
         /// </summary>
         public const int countItemBy = 2;
 
-        public int[] registersReciept = { 1, 2, 3, 4, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 200, 201, 202, 203, 204, 205, 206, 210, 211, 212, 213, 214, 215, 216, 220, 221, 223, 224, 225, 226, 230, 231, 232, 233, 234, 235, 236 };
-        public int[] registersCorrection = { 5, 7, 51, 52, 53, 54, 55, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, };
-        public int[] registersNFDoc = { 9, 10, 91, 92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 105, 106, 107, 108, 109 };
+        private int[] registersReciept = { 1, 2, 3, 4, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 200, 201, 202, 203, 204, 205, 206, 210, 211, 212, 213, 214, 215, 216, 220, 221, 223, 224, 225, 226, 230, 231, 232, 233, 234, 235, 236 };
+        private int[] registersCorrection = { 5, 7, 51, 52, 53, 54, 55, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, };
+        private int[] registersNFDoc = { 9, 10, 91, 92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 105, 106, 107, 108, 109 };
+        private int[] registersСumulative = { 191, 192, 193, 194 };
 
 
         public EcrCtrl ecrCtrl;
-        public uint versionFFD = 0;
+        public uint versionFFD = 0;                                 //Версия ФФД
         decimal[] registersTmp = new decimal[237];                  //массив временных регистров
         public decimal[] registers = new decimal[237];              //массив регистров
         public int[] counters = new int[23];                        //массив счётчиков
-        public List<int> inaccessibleRegisters = new List<int>();
+        public List<int> inaccessibleRegisters = new List<int>();   //недоступные регистры
         private Random random = new Random();
 
         public enum ItemBy
@@ -143,6 +144,11 @@ namespace FW16AutoTestUtility
         };
         private string fileName;
 
+        public int[] RegistersReciept { get => registersReciept; }
+        public int[] RegistersCorrection { get => registersCorrection; }
+        public int[] RegistersNFDoc { get => registersNFDoc; }
+        public int[] RegistersСumulative { get => registersСumulative; }
+
         public TestingInterfaceFW16(out EcrCtrl ecrCtrl)
         {
             fileName = $"log\\log{DateTime.Now.ToString("ddMMyy")}.log";
@@ -172,7 +178,7 @@ namespace FW16AutoTestUtility
         /// </summary>
         /// <param name="serialPort">Порт по покотору производится поключение к ККТ</param>
         /// <param name="baudRate">Частота подключения</param>
-        int ConnectToFW(int serialPort = 1, int baudRate = 57600)
+        int ConnectToFW(int serialPort, int baudRate = 57600)
         {
             try
             {
@@ -181,6 +187,27 @@ namespace FW16AutoTestUtility
                 Log($"Произведено подключение к ККТ.\n" +
                     $" Port={serialPort}\n" +
                     $" Rate={baudRate}");
+                ShowInformation();
+            }
+            catch (Exception excep)
+            {
+                Console.WriteLine(excep.Message);                 //вывод ошибки доступа порта
+                Log($"Не удалось подключиться к ККТ.\n" +
+                    $" Message={excep.Message}");
+                return 1;
+            }
+            return 0;
+        }
+
+        int ConnectToFW()
+        {
+            try
+            {
+                ecrCtrl.Init();             //Подключчение по порту и частоте
+                Console.WriteLine($"Произведено подключение к ККТ. Port=default Rate=default");
+                Log($"Произведено подключение к ККТ.\n" +
+                    $" Port=default\n" +
+                    $" Rate=default");
                 ShowInformation();
             }
             catch (Exception excep)
@@ -362,7 +389,7 @@ namespace FW16AutoTestUtility
                 }
             }
             //return RequestRegisters(111, 120);
-            return RequestRegisters(registersNFDoc);
+            return RequestRegisters(RegistersNFDoc);
 
         }
 
@@ -413,7 +440,7 @@ namespace FW16AutoTestUtility
                 }
             }
             //return RequestRegisters(160, 182); //+ RequestRegisters(111, 120);
-            return RequestRegisters(registersReciept);
+            return RequestRegisters(RegistersReciept);
         }
 
         /// <summary>
@@ -462,7 +489,7 @@ namespace FW16AutoTestUtility
                 }
             }
             //return RequestRegisters(111, 120);
-            return RequestRegisters(registersCorrection);
+            return RequestRegisters(RegistersCorrection);
         }
 
         /// <summary>
@@ -526,12 +553,13 @@ namespace FW16AutoTestUtility
         {
             try
             {
+                decimal balance = (document.Total - document.TotalaPaid);
                 document.AddPayment(tenderCode, sum);                                                                                                                                       //добавление оплаты 
 
                 Log($"\t\t\tОплата добавлена\n" +
                     $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)this.tenderCodeType[tenderCode],7}|{sum,8}");
 
-                if (tenderCode == Native.CmdExecutor.TenderCode.Cash && (document.Total - document.TotalaPaid) < sum) sum = (document.Total - document.TotalaPaid);                         //учитывание сдачи при расплате наличными
+                if (tenderCode == Native.CmdExecutor.TenderCode.Cash && balance < sum) sum = balance;                                                                                       //учитывание сдачи при расплате наличными
 
                 registersTmp[this.receiptKind[receiptKind]] += sum;                                                                                                                         //добавление в регистры (1-4) суммы по типу операции
                 registersTmp[this.receiptKind[receiptKind] * 10 + 1 + (int)tenderCode] += sum;                                                                                              //добавление в регистры (11-18, 21-28, 31-38, 41-48) суммы по номеру платежа
@@ -857,7 +885,7 @@ namespace FW16AutoTestUtility
             string[] messages = message.Split('\n');
             foreach (string i in messages)
             {
-                File.AppendAllText(fileName, $"{DateTime.Now.ToString("HH:mm:ss.ffff")}\t{i}\n");
+                File.AppendAllText(fileName, $"{DateTime.Now.ToString("HH:mm:ss.ffff")}\t{i}\r\n");
             }
         }
     }

@@ -58,28 +58,28 @@ namespace FW16AutoTestUtility
             TestingInterfaceFW16.OpenShift(nameOperator);   //открытие смены для этого теста
             TestingInterfaceFW16.GetRegisters();
             TestingInterfaceFW16.GetCounters();
-            if (TestReceiptMax() != 0)//вызов функции тестирования чека
+            if (TestReceiptMax() != 0)                          //вызов функции тестирования чека
             {
                 Console.WriteLine($"+------------+-----------------+-----------------+--------+---------------+---------------+\n" +
                     $"|{"Тип чека",12}|{"Процентная ставка",17}|{"Тип оплаты",17}|{"Товар по",8}|{"Номер оплаты",15}|{"Тип оплаты",15}|\n" +
                     $"+------------+-----------------+-----------------+--------+---------------+---------------+\n" + TestReceiptMin());
             }
-            if (TestCorrectionMax() != 0)                               //вызов функции тестирования чека коррекции
+            if (TestCorrectionMax() != 0)                       //вызов функции тестирования чека коррекции
             {
                 Console.WriteLine($"+------------+-----------------+---------------+---------------+\n" +
                     $"|{"Тип чека",12}|{"Процентная ставка",17}|{"Номер оплаты",15}|{"Тип оплаты",15}|\n" +
                     $"+------------+-----------------+---------------+---------------+\n" + TestCorrectionMin());
             }
-            if (TestNonFiscalMax() != 0)                                //вызов функции нефискального документа
+            if (TestNonFiscalMax() != 0)                        //вызов функции нефискального документа
             {
                 Console.WriteLine($"+------------+---------------+---------------+\n" +
                     $"|{"Тип чека",12}|{"Номер оплаты",15}|{"Тип оплаты",15}|\n" +
                     $"+------------+---------------+---------------+\n" + TestNonFiscalMin());
             }
-            TestReceiptMax(true);                           //вызов функции тестирования чека c отменой.
-            TestNonFiscalMax(true);                            //вызов функции нефискального документа с отменой
-                                                               //закрытие смены этого теста
-            TestingInterfaceFW16.CloseShift(nameOperator);   //Закрытие смены для этого теста
+            TestReceiptMax(true);                               //вызов функции тестирования чека c отменой.
+            TestNonFiscalMax(true);                             //вызов функции нефискального документа с отменой
+                                                                //закрытие смены этого теста
+            TestingInterfaceFW16.CloseShift(nameOperator);      //Закрытие смены для этого теста
 
             TestingInterfaceFW16.RequestRegisters();
             TestingInterfaceFW16.RequestCounters();
@@ -147,7 +147,7 @@ namespace FW16AutoTestUtility
                     if (TestingInterfaceFW16.DocumentComplete(document, (Native.CmdExecutor.NFDocType)nfDocType, abort) != 0)
                     {
                         err += $"|{(Native.CmdExecutor.NFDocType)nfDocType,12}|{(Native.CmdExecutor.TenderCode)tenderCode,15}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode],15}|\n";
-                        TestingInterfaceFW16.GetRegisters(new int[] { 191,192,193,194});
+                        TestingInterfaceFW16.GetRegisters(new int[] { 191, 192, 193, 194 });
                     }
                 }
             }
@@ -211,7 +211,7 @@ namespace FW16AutoTestUtility
                         if (TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort) != 0)
                         {
                             err += $"|{(ReceiptKind)receiptKind,12}|{(Native.CmdExecutor.VatCodeType)vatCode,17}|{(Native.CmdExecutor.TenderCode)tenderCode,15}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode],15}|\n";
-                            TestingInterfaceFW16.GetRegisters(new int[] { 191, 192, 193, 194 });
+                            TestingInterfaceFW16.GetRegisters(TestingInterfaceFW16.RegistersСumulative);
                         }
                     }
                 }
@@ -259,7 +259,7 @@ namespace FW16AutoTestUtility
                         sum = document.Total - document.TotalaPaid;
                     }
 
-                    TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum);       //оплата наличными
+                    TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum + costs[1]);       //оплата наличными
 
                     ret += TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort);
                 }
@@ -298,11 +298,11 @@ namespace FW16AutoTestUtility
                                         costs[i % TestingInterfaceFW16.countcosts],
                                         (ItemPaymentKind)itemPaymentKind);  //создание товара
                                 }
-                                TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, document.Total);
+                                TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, document.Total + ((Native.CmdExecutor.TenderCode)tenderCode == Native.CmdExecutor.TenderCode.Cash ? costs[1] : 0));
                                 if (TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort) != 0)
                                 {
                                     err += $"|{(ReceiptKind)receiptKind,12}|{(Native.CmdExecutor.VatCodeType)vatCode,17}|{(ItemPaymentKind)itemPaymentKind,17}|{(TestingInterfaceFW16.ItemBy)itemBy,8}|{(Native.CmdExecutor.TenderCode)tenderCode,15}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode],15}|\n";
-                                    TestingInterfaceFW16.GetRegisters(new int[] { 191, 192, 193, 194 });
+                                    TestingInterfaceFW16.GetRegisters(TestingInterfaceFW16.RegistersСumulative);
                                 }
                             }
 
