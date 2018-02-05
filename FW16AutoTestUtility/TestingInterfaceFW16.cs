@@ -205,7 +205,7 @@ namespace FW16AutoTestUtility
             catch (Exception excep)
             {
                 Console.WriteLine(excep.Message);                 //вывод ошибки доступа порта
-                Log($"Не удалось подключиться к ККТ.\n" +
+                Log($"Error! Не удалось подключиться к ККТ.\n" +
                     $" Message={excep.Message}");
                 return 1;
             }
@@ -226,7 +226,7 @@ namespace FW16AutoTestUtility
             catch (Exception excep)
             {
                 Console.WriteLine(excep.Message);                 //вывод ошибки доступа порта
-                Log($"Не удалось подключиться к ККТ.\n" +
+                Log($"Error! Не удалось подключиться к ККТ.\n" +
                     $" Message={excep.Message}");
                 return 1;
             }
@@ -258,7 +258,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\tНе удалось открыть смену.\n" +
+                Log($"\tError! Не удалось открыть смену.\n" +
                     $"\t Exception={ex.Message}");
             }
         }
@@ -272,7 +272,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\tНе удалось закрыт смену.\n" +
+                Log($"\tError! Не удалось закрыт смену.\n" +
                     $"\t Exception={ex.Message}");
             }
 
@@ -293,7 +293,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\t\tНе удалось открыть нефискальный документ.\n" +
+                Log($"\t\tError! Не удалось открыть нефискальный документ.\n" +
                     $"\t\t Type={nfDocType}\n" +
                     $"\t\t Exception={ex.Message}");
                 document = null;
@@ -317,7 +317,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\t\tНе удалось открыть чек коррекции.\n" +
+                Log($"\t\tError! Не удалось открыть чек коррекции.\n" +
                     $"\t\t Kind={receiptKind}\n" +
                     $"\t\t Exception={ex.Message}");
                 document = null;
@@ -347,7 +347,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\t\tНе удалось открыть чек.\n" +
+                Log($"\t\tError! Не удалось открыть чек.\n" +
                     $"\t\t Kind={receiptKind}\n" +
                     $"\t\t Operator={nameOerator}\n" +
                     $"\t\t Exception={ex.Message}");
@@ -377,7 +377,7 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception ex)
                 {
-                    Log($"\t\tНе удалось отменить нефискальный документ.\n" +
+                    Log($"\t\tError! Не удалось отменить нефискальный документ.\n" +
                         $"\t\t Exception={ex.Message}" +
                         $"---------------------------------------------------");
                     document = null;
@@ -396,7 +396,7 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception ex)
                 {
-                    Log($"\t\tНе удалось оформить нефискальный документ.\n" +
+                    Log($"\t\tError! Не удалось оформить нефискальный документ.\n" +
                         $"\t\t Exception={ex.Message}" +
                         $"---------------------------------------------------");
                 }
@@ -426,7 +426,7 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception ex)
                 {
-                    Log($"\t\tНе удалось отменить чек.\n" +
+                    Log($"\t\tError! Не удалось отменить чек.\n" +
                         $"\t\t Exception={ex.Message}" +
                         $"---------------------------------------------------");
                     document = null;
@@ -446,7 +446,7 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception ex)
                 {
-                    Log($"\t\tНе удалось оформить чек.\n" +
+                    Log($"\t\tError! Не удалось оформить чек.\n" +
                         $"\t\t Exception={ex.Message}" +
                         $"---------------------------------------------------");
                     document = null;
@@ -476,7 +476,7 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception ex)
                 {
-                    Log($"\t\tНе удалось отменить чек коррекции.\n" +
+                    Log($"\t\tError! Не удалось отменить чек коррекции.\n" +
                         $"\t\t Exception={ex.Message}" +
                         $"---------------------------------------------------");
                     document = null;
@@ -495,7 +495,7 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception ex)
                 {
-                    Log($"\t\tНе удалось оформить чек коррекции.\n" +
+                    Log($"\t\tError! Не удалось оформить чек коррекции.\n" +
                         $"\t\t Exception={ex.Message}" +
                         $"---------------------------------------------------");
                     document = null;
@@ -548,7 +548,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\t\t\tНе удалось добавить товар\n" +
+                Log($"\t\t\tError! Не удалось добавить товар\n" +
                     $"\t\t\t {code,15}|{name,12}|{itemBy,5}|{count,7}|{money,8}|{vatCode,13}\n" +
                     $"\t\t\t Exception={ex.Message}");
 
@@ -593,7 +593,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\t\t\tНе удалось добавить оплату\n" +
+                Log($"\t\t\tError! Не удалось добавить оплату\n" +
                     $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)this.tenderCodeType[tenderCode],7}|{sum,8}\n" +
                     $"\t\t\t Exception={ex.Message}");
             }
@@ -625,7 +625,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\t\t\tНе удалось добавить сумму коррекции\n" +
+                Log($"\t\t\tError! Не удалось добавить сумму коррекции\n" +
                     $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)this.tenderCodeType[tenderCode],7}|{sum,8}\n" +
                     $"\t\t\t Exception={ex.Message}");
             }
@@ -661,7 +661,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\t\t\tНе удалось добавить сумму\n" +
+                Log($"\t\t\tError! Не удалось добавить сумму\n" +
                     $"\t\t\t {(int)tenderCode,3}|{this.tenderCodeType[tenderCode],7}|{sum,8}\n" +
                     $"\t\t\t Exception={ex.Message}");
             }
@@ -696,7 +696,7 @@ namespace FW16AutoTestUtility
             }
             catch (Exception ex)
             {
-                Log($"\t\t\tНе удалось добавить сумму коррекции\n" +
+                Log($"\t\t\tError! Не удалось добавить сумму коррекции\n" +
                     $"\t\t\t {vatCode,13}|{sum,8}\n" +
                     $"\t\t\t Exception={ex.Message}");
             }
@@ -725,8 +725,8 @@ namespace FW16AutoTestUtility
                     }
                     catch (Exception)
                     {
-                        Console.WriteLine("Не удалось получить доступ к регистру №" + i + "");
-                        Log($"Не удалось получить доступ к регистру №{i}");
+                        Console.WriteLine("Error! Не удалось получить доступ к регистру №" + i + "");
+                        Log($"Error! Не удалось получить доступ к регистру №{i}");
                     }
                 }
             }
@@ -766,8 +766,8 @@ namespace FW16AutoTestUtility
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Не удалось получить доступ к регистру №" + i + "");
-                        Log($"Не удалось получить доступ к регистру №{i}\n" +
+                        Console.WriteLine("Error! Не удалось получить доступ к регистру №" + i + "");
+                        Log($"Error! Не удалось получить доступ к регистру №{i}\n" +
                             $" Exception={ex.Message}");
                     }
                 }
@@ -809,8 +809,8 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Не удалось получить доступ к счётчику №" + i + "");                              //ошибка доступа к регистру
-                    Log($"Не удалось получить доступ к счётчику №{i}");
+                    Console.WriteLine("Error! Не удалось получить доступ к счётчику №" + i + "");                              //ошибка доступа к регистру
+                    Log($"Error! Не удалось получить доступ к счётчику №{i}");
                 }
             }
             Console.Write(((err.Length > 304) ? err : ""));           //логирование
@@ -838,8 +838,8 @@ namespace FW16AutoTestUtility
                     }
                     catch (Exception)
                     {
-                        Console.WriteLine($"Не удалось получить значение регистра №{i}");
-                        Log($"Не удалось получить получить значение регистра №{i}");
+                        Console.WriteLine($"Error! Не удалось получить значение регистра №{i}");
+                        Log($"Error! Не удалось получить получить значение регистра №{i}");
                         inaccessibleRegisters.Add(i);
                     }
                 }
@@ -872,8 +872,8 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine($"Не удалось получить получить значение счётчика №{i}");
-                    Log($"Не удалось получить получить значение счётчика №{i}");
+                    Console.WriteLine($"Error! Не удалось получить получить значение счётчика №{i}");
+                    Log($"Error! Не удалось получить получить значение счётчика №{i}");
                 }
             }
             Console.WriteLine($"Значения программных счётчиков обновлены данными из ККТ");     //логирование
