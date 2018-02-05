@@ -97,7 +97,7 @@ namespace FW16AutoTestUtility
         private int TestNonFiscalMax(bool abort = false)
         {
             int ret = 0;
-            for (int nfDocType = 1; nfDocType < 4; nfDocType++)                                           //Перебор типов нефиксальных документов
+            for (int nfDocType = 1; nfDocType <= TestingInterfaceFW16.countNFDocType; nfDocType++)                                           //Перебор типов нефиксальных документов
             {
                 TestingInterfaceFW16.StartDocument(out Fw16.Ecr.NonFiscalBase document, (Native.CmdExecutor.NFDocType)nfDocType);
                 for (int tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode && nfDocType != 3; tenderCode++)
@@ -127,7 +127,7 @@ namespace FW16AutoTestUtility
         private string TestNonFiscalMin(bool abort = false)
         {
             string err = null;
-            for (int nfDocType = 1; nfDocType <= TestingInterfaceFW16.countNFDocType; nfDocType++)                                           //Перебор типов нефиксальных документов
+            for (int nfDocType = 1; nfDocType < TestingInterfaceFW16.countNFDocType; nfDocType++)                                           //Перебор типов нефиксальных документов
             {
                 for (int tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode && nfDocType != 3; tenderCode++)                                         //
                 {
@@ -236,7 +236,7 @@ namespace FW16AutoTestUtility
                     {
                         for (int itemPaymentKind = 1; itemPaymentKind < TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)   //перебор типов оплаты товара
                         {
-                            for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countcosts); i++)             //перебор комбинаций стоиости и количества
+                            for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countcosts); i++)              //перебор комбинаций стоиости и количества
                             {
                                 TestingInterfaceFW16.AddEntry(document,
                                     (ReceiptKind)receiptKind,
@@ -247,8 +247,6 @@ namespace FW16AutoTestUtility
                                     costs[i % TestingInterfaceFW16.countcosts],
                                     (ItemPaymentKind)itemPaymentKind);  //создание товара
                             }
-
-
                         }
                     }
 
@@ -286,7 +284,7 @@ namespace FW16AutoTestUtility
                     {
                         for (int itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)                                       //перебор типов добавления товара
                         {
-                            for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                   //перебор видов платежей
+                            for (int tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                   //перебор видов платежей
                             {
                                 TestingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, (ReceiptKind)receiptKind);
                                 for (int i = 0; i < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countcosts); i++)         //перебор комбинаций стоиости и количества

@@ -32,7 +32,7 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Количество типов нефискальных документов
         /// </summary>
-        public static int countNFDocType = 3;
+        public const int countNFDocType = 3;
         /// <summary>
         /// Количество типов оплаты
         /// </summary>
@@ -531,6 +531,8 @@ namespace FW16AutoTestUtility
                 Log($"\t\t\tОплата добавлена\n" +
                     $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)this.tenderCodeType[tenderCode],7}|{sum,8}");
 
+                if (tenderCode == Native.CmdExecutor.TenderCode.Cash && (document.Total - document.TotalaPaid) < sum) sum = (document.Total - document.TotalaPaid);                         //учитывание сдачи при расплате наличными
+
                 registersTmp[this.receiptKind[receiptKind]] += sum;                                                                                                                         //добавление в регистры (1-4) суммы по типу операции
                 registersTmp[this.receiptKind[receiptKind] * 10 + 1 + (int)tenderCode] += sum;                                                                                              //добавление в регистры (11-18, 21-28, 31-38, 41-48) суммы по номеру платежа
                 if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[this.receiptKind[receiptKind] * 10 + 1 + 8] += sum;             //добавление в регистры (19, 29, 39, 49) суммы электрооного типа платежа
@@ -758,7 +760,7 @@ namespace FW16AutoTestUtility
         /// Обновление программных регистров данными из ККТ
         /// </summary>
         /// <param name="arr">Массив пропускаемых регистров</param>
-        public void GetRegisters(int[] arr =null)
+        public void GetRegisters(int[] arr = null)
         {
             ushort endIndex = 237;
             ushort startIndex = 1;
@@ -782,7 +784,7 @@ namespace FW16AutoTestUtility
             }
             Console.WriteLine($"Значения программных регистров обновлены данными из ККТ");     //логирование
             Log($"Значения программных регистров обновлены данными из ККТ");
-            if (arr != null)
+            if (Array.IndexOf(arr, -1) == -1)
             {
                 string s = "";
                 foreach (int i in arr)
