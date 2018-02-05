@@ -10,6 +10,9 @@ namespace FW16AutoTestUtility
     {
         static void Main(string[] args)
         {
+
+            Console.Title= "AutoTestUtility v 0.3.2";
+            int serialPort, baudRate;
             Tests fw16 = new Tests();
             Console.WriteLine("(press any key)");
             Console.ReadKey();
