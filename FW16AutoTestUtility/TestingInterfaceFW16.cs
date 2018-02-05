@@ -608,7 +608,7 @@ namespace FW16AutoTestUtility
                 registersTmp[(int)tenderCode + 111] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
                 if (this.tenderCodeType[tenderCode] == this.tenderType[Native.CmdExecutor.TenderType.NonCash]) registersTmp[119] += this.receiptKind[receiptKind] % 3 == 1 ? sum : -sum;     //добавление в регистры (119) суммы электрооного типа платежа
 
-                registersTmp[this.receiptKind[receiptKind] + 190] += sum;                                                                                                                   //добавление в регистры (191-194) накопительный регистр по типу операции
+                //registersTmp[this.receiptKind[receiptKind] + 190] += sum;                                                                                                                   //добавление в регистры (191-194) накопительный регистр по типу операции
             }
             catch (Exception ex)
             {
