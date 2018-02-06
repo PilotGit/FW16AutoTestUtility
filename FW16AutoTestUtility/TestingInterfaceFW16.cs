@@ -76,7 +76,7 @@ namespace FW16AutoTestUtility
         public uint versionFFD = 0;                                                 //Версия ФФД
         decimal[] registersTmp = new decimal[countRegisters + 1];                   //массив временных регистров
         public decimal[] registers = new decimal[countRegisters + 1];               //массив регистров
-        public int[] counters = new int[countCounters+1];                           //массив счётчиков
+        public int[] counters = new int[countCounters + 1];                           //массив счётчиков
         public List<int> inaccessibleRegisters = new List<int>();                   //недоступные регистры
         private Random random = new Random();
 
@@ -572,7 +572,11 @@ namespace FW16AutoTestUtility
                 Log($"\t\t\tОплата добавлена\n" +
                     $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)this.tenderCodeType[tenderCode],7}|{sum,8}");
 
-                if (tenderCode == Native.CmdExecutor.TenderCode.Cash && balance < sum) sum = balance;                                                                                       //учитывание сдачи при расплате наличными
+                if (tenderCode == Native.CmdExecutor.TenderCode.Cash && balance < sum)                                                                                                      //учитывание сдачи при расплате наличными
+                {
+                    Log($"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)this.tenderCodeType[tenderCode],7}|{balance - sum,8}");                                                //Логирование сдачи
+                    sum = balance;
+                }
 
                 registersTmp[this.receiptKind[receiptKind]] += sum;                                                                                                                         //добавление в регистры (1-4) суммы по типу операции
                 registersTmp[this.receiptKind[receiptKind] * 10 + 1 + (int)tenderCode] += sum;                                                                                              //добавление в регистры (11-18, 21-28, 31-38, 41-48) суммы по номеру платежа
@@ -683,7 +687,7 @@ namespace FW16AutoTestUtility
                 Log($"\t\t\tСумма коррекции добавлена\n" +
                     $"\t\t\t {vatCode,13}|{sum,8}");
 
-                registersTmp[this.receiptKind[receiptKind] * 10 + this.vatCode2[vatCode] + 50] += sum;                                                                      //добавление в регистры (60-65,80-85) суммы по ставкам НДС
+                registersTmp[this.receiptKind[receiptKind] * 10 + this.vatCode2[vatCode] + 49] += sum;                                                                      //добавление в регистры (60-65,80-85) суммы по ставкам НДС
                 switch (this.vatCode2[vatCode])
                 {
                     case 1: registersTmp[(this.receiptKind[receiptKind]) * 10 + (this.vatCode2[vatCode]) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;               //добавление в регистры (66,86) суммы НДС
@@ -711,7 +715,8 @@ namespace FW16AutoTestUtility
         {
             //endIndex = endIndex > 0 ? endIndex : (ushort)(countRegisters + 1);                                                           //проверка конечного значения если 0, то до конца
             endIndex = countRegisters + 1;
-            string err = $"+-------+------------------+-------------------+\n" +
+            string err = $"Error!\n" +
+                $"+-------+------------------+-------------------+\n" +
                 $"|   #   |       test       |        ККТ        |\n" +
                 $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
@@ -725,14 +730,14 @@ namespace FW16AutoTestUtility
                     }
                     catch (Exception)
                     {
-                        Console.WriteLine("Error! Не удалось получить доступ к регистру №" + i + "");
-                        Log($"Error! Не удалось получить доступ к регистру №{i}");
+                        Console.WriteLine("Warning! Не удалось получить доступ к регистру №" + i + "");
+                        Log($"Warning! Не удалось получить доступ к регистру №{i}");
                     }
                 }
             }
-            Console.Write(((err.Length > 304) ? err : ""));           //логирование
-            Log($"Запрошеные данные с регистров с {startIndex} по {endIndex} {((err.Length > 304) ? "\n" + err : "")}");           //логирование
-            if (err.Length > 304) return 1;
+            Console.Write(((err.Length > 310) ? err : ""));           //логирование
+            Log($"Запрошеные данные с регистров с {startIndex} по {endIndex} {((err.Length > 310) ? "\n" + err : "")}");           //логирование
+            if (err.Length > 310) return 1;
             return 0;
         }
 
@@ -743,7 +748,8 @@ namespace FW16AutoTestUtility
         /// <returns></returns>
         public int RequestRegisters(int[] arr)
         {
-            string err = $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
+            string err = $"Error!\n" +
+                         $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
                          $"|   #   |{"discription",lenStringDiscription}|       test       |        ККТ        |\n" +
                          $"+-------+--------------------------------------------------+------------------+-------------------+\n";                                                                                          //строка ошибки заполняемая при несоответсвии регистров
             foreach (ushort i in arr)
@@ -766,15 +772,15 @@ namespace FW16AutoTestUtility
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error! Не удалось получить доступ к регистру №" + i + "");
-                        Log($"Error! Не удалось получить доступ к регистру №{i}\n" +
+                        Console.WriteLine("Warning! Не удалось получить доступ к регистру №" + i + "");
+                        Log($"Warning! Не удалось получить доступ к регистру №{i}\n" +
                             $" Exception={ex.Message}");
                     }
                 }
             }
-            Console.Write(((err.Length > 304) ? err : ""));                                         //логирование
-            Log($"Запрошеные данные с регистров{((err.Length > 304) ? "\n" + err : "")}");          //логирование
-            if (err.Length > 304) return 1;
+            Console.Write(((err.Length > 310) ? err : ""));                                         //логирование
+            Log($"Запрошеные данные с регистров{((err.Length > 310) ? "\n" + err : "")}");          //логирование
+            if (err.Length > 310) return 1;
             return 0;
         }
 
@@ -785,8 +791,9 @@ namespace FW16AutoTestUtility
         /// <param name="endIndex">Конечный индекс, не включительно</param>
         public void RequestCounters(ushort startIndex = 1, ushort endIndex = 0)
         {
-            endIndex = endIndex > 0 ? endIndex : (ushort)(countCounters+1);                                                            //проверка конечного значения если 0, то до конца
-            string err = $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
+            endIndex = endIndex > 0 ? endIndex : (ushort)(countCounters + 1);                                                            //проверка конечного значения если 0, то до конца
+            string err = $"Error!\n" +
+                $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
                 $"|   #   |{"discription",lenStringDiscription}|       test       |        ККТ        |\n" +
                 $"+-------+--------------------------------------------------+------------------+-------------------+\n";                                                                                              //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i < endIndex; i++)
@@ -809,12 +816,12 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Error! Не удалось получить доступ к счётчику №" + i + "");                              //ошибка доступа к регистру
-                    Log($"Error! Не удалось получить доступ к счётчику №{i}");
+                    Console.WriteLine("Warning! Не удалось получить доступ к счётчику №" + i + "");                              //ошибка доступа к регистру
+                    Log($"Warning! Не удалось получить доступ к счётчику №{i}");
                 }
             }
-            Console.Write(((err.Length > 304) ? err : ""));           //логирование
-            Log($"Запрошеные данные с счётчиков с {startIndex} по {endIndex} {((err.Length > 304) ? "\n" + err : "")}");           //логирование
+            Console.Write(((err.Length > 310) ? err : ""));           //логирование
+            Log($"Запрошеные данные с счётчиков с {startIndex} по {endIndex} {((err.Length > 310) ? "\n" + err : "")}");           //логирование
         }
 
 
@@ -826,6 +833,7 @@ namespace FW16AutoTestUtility
         {
             ushort endIndex = countRegisters + 1;
             ushort startIndex = 1;
+            string err = "";
             if (arr == null) arr = new int[] { -1 };
             for (ushort i = startIndex; i < endIndex; i++)
             {
@@ -838,14 +846,13 @@ namespace FW16AutoTestUtility
                     }
                     catch (Exception)
                     {
-                        Console.WriteLine($"Error! Не удалось получить значение регистра №{i}");
-                        Log($"Error! Не удалось получить получить значение регистра №{i}");
+                        err += $"Warning! Не удалось получить получить значение регистра №{i}\n";
                         inaccessibleRegisters.Add(i);
                     }
                 }
             }
-            Console.WriteLine($"Значения программных регистров обновлены данными из ККТ");     //логирование
-            Log($"Значения программных регистров обновлены данными из ККТ");
+            Console.WriteLine($"{err}Значения программных регистров обновлены данными из ККТ");     //логирование
+            Log($"{err}Значения программных регистров обновлены данными из ККТ");
             if (Array.IndexOf(arr, -1) == -1)
             {
                 string s = "";
@@ -861,7 +868,7 @@ namespace FW16AutoTestUtility
         /// </summary>
         public void GetCounters()
         {
-            ushort endIndex = countCounters+1;
+            ushort endIndex = countCounters + 1;
             ushort startIndex = 1;
             for (ushort i = startIndex; i < endIndex; i++)
             {
@@ -872,8 +879,8 @@ namespace FW16AutoTestUtility
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine($"Error! Не удалось получить получить значение счётчика №{i}");
-                    Log($"Error! Не удалось получить получить значение счётчика №{i}");
+                    Console.WriteLine($"Warning! Не удалось получить получить значение счётчика №{i}");
+                    Log($"Warning! Не удалось получить получить значение счётчика №{i}");
                 }
             }
             Console.WriteLine($"Значения программных счётчиков обновлены данными из ККТ");     //логирование
