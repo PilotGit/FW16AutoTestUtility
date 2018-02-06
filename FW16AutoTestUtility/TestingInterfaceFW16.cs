@@ -138,7 +138,7 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Соответствие типа по номеру платежа его номеру
         /// </summary>
-        private Dictionary<Native.CmdExecutor.TenderType, int> tenderType = new Dictionary<Native.CmdExecutor.TenderType, int>
+        public Dictionary<Native.CmdExecutor.TenderType, int> tenderType = new Dictionary<Native.CmdExecutor.TenderType, int>
             {
                 {Native.CmdExecutor.TenderType.Cash,0 },
                 {Native.CmdExecutor.TenderType.NonCash,1 },
