@@ -101,6 +101,11 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Соответствие типа НДС его номеру
         /// </summary>
+        public readonly List<VatCode> vatCodeCorr = new List<VatCode>{ 0, VatCode.Vat18, VatCode.Vat10, VatCode.Vat0, VatCode.NoVat, VatCode.Vat18Included, VatCode.Vat10Included };
+
+        /// <summary>
+        /// Соответствие типа НДС его номеру
+        /// </summary>
         private Dictionary<VatCode, int> vatCode2 = new Dictionary<VatCode, int>() {
                 { VatCode.Vat18,1 },
                 { VatCode.Vat10,2 },
@@ -165,7 +170,6 @@ namespace FW16AutoTestUtility
         public TestingInterfaceFW16(out EcrCtrl ecrCtrl)
         {
             StartLog();
-
             this.ecrCtrl = ecrCtrl = new EcrCtrl();
             if (ConnectToFW() == 0)
             {
@@ -554,8 +558,8 @@ namespace FW16AutoTestUtility
                 else receiptEntry = document.NewItemPriced(code, name, vatCode, money, count);                                              //создание по цене
                 if (ecrCtrl.Info.FfdVersion >= 2)
                 {
-                    receiptEntry.PaymentKind = paymentKind;                                                                                     //спооб рассчёта
-                    receiptEntry.Kind = kind;                                                                                                   //тип добавляемого товара
+                    receiptEntry.PaymentKind = paymentKind;                                                                                 //спооб рассчёта
+                    receiptEntry.Kind = kind;                                                                                               //тип добавляемого товара
                 }
                 document.AddEntry(receiptEntry);                                                                                            //добавления товара в чек
 
@@ -713,7 +717,6 @@ namespace FW16AutoTestUtility
 
                 Log($"\t\t\tСумма коррекции добавлена\n" +
                     $"\t\t\t {vatCode,13}|{sum,8}");
-
                 registersTmp[this.receiptKind[receiptKind] * 10 + this.vatCode2[vatCode] + 49] += sum;                                                                      //добавление в регистры (60-65,80-85) суммы по ставкам НДС
                 switch (this.vatCode2[vatCode])
                 {
