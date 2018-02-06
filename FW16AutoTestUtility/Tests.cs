@@ -415,7 +415,7 @@ namespace FW16AutoTestUtility
                             {
                                 for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                                 {
-                                    if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType[Native.CmdExecutor.TenderType.NonCash]) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                    if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
                                 }
                             }
                         }
@@ -552,8 +552,8 @@ namespace FW16AutoTestUtility
                                 {
                                     for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                                     {
-                                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType[Native.CmdExecutor.TenderType.Cash] && numberRegister == 180) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
-                                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType[Native.CmdExecutor.TenderType.NonCash] && numberRegister == 181) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.Cash) && numberRegister == 180) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash) && numberRegister == 181) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
                                     }
                                 }
                             }
@@ -649,7 +649,7 @@ namespace FW16AutoTestUtility
                     nfDocType = (numberRegister - 80) / 10;
                     for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode && nfDocType != 3; tenderCode++)                                         //
                     {
-                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType[Native.CmdExecutor.TenderType.NonCash] && numberRegister == 181)
+                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash) && numberRegister == 181)
                             listNFDocTmp.Add(new TestDataNFDoc(nfDocType, tenderCode)); ;
                     }
 
@@ -668,7 +668,7 @@ namespace FW16AutoTestUtility
                     {
                         for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode && nfDocType != 3; tenderCode++)                                         //
                         {
-                            if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType[Native.CmdExecutor.TenderType.NonCash] && numberRegister == 181)
+                            if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == testingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash) && numberRegister == 181)
                                 listNFDocTmp.Add(new TestDataNFDoc(nfDocType, tenderCode));
                         }
                     }
