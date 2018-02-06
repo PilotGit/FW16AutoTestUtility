@@ -164,26 +164,53 @@ namespace FW16AutoTestUtility
 
         public TestingInterfaceFW16(out EcrCtrl ecrCtrl)
         {
-            fileName = $"log\\log{DateTime.Now.ToString("ddMMyy")}.log";
-            if (!Directory.Exists("log")) { Directory.CreateDirectory("log"); }
-            if (!File.Exists(fileName)) File.Create(fileName).Close();
+            StartLog();
 
             this.ecrCtrl = ecrCtrl = new EcrCtrl();
             if (ConnectToFW() == 0)
             {
-                tenderCodeType = new Dictionary<Native.CmdExecutor.TenderCode, int>();
-                var tenderList = ecrCtrl.Info.GetTendersList().GetEnumerator();                                         //получение коллекции соответствий кода платежа типу платежа
-
-                Log("Получено соответствие номеров платежа и типов");
-
-                for (int i = 0; i < countTenderCode; i++)
-                {
-                    tenderList.MoveNext();                                                                              //перебор коллекции
-                    tenderCodeType.Add((Native.CmdExecutor.TenderCode)i, tenderType[tenderList.Current.Mode]);          //создание соответствия кода платежа типу 
-
-                    Log($"|{i,3}|{tenderList.Current.Mode,10}|");
-                }
+                CreateTenderCodeTypeDictionary();
             }
+        }
+
+        public TestingInterfaceFW16(out EcrCtrl ecrCtrl, int serialPort, int baudRate)
+        {
+            StartLog();
+
+            this.ecrCtrl = ecrCtrl = new EcrCtrl();
+            if (ConnectToFW(serialPort, baudRate) == 0)
+            {
+                CreateTenderCodeTypeDictionary();
+            }
+        }
+
+        /// <summary>
+        /// Обновление списка соответствий номеров платежей типу платежа.
+        /// </summary>
+        public void CreateTenderCodeTypeDictionary()
+        {
+            tenderCodeType = new Dictionary<Native.CmdExecutor.TenderCode, int>();
+            var tenderList = ecrCtrl.Info.GetTendersList().GetEnumerator();                                         //получение коллекции соответствий кода платежа типу платежа
+
+            Log("Получено соответствие номеров платежа и типов");
+
+            for (int i = 0; i < countTenderCode; i++)
+            {
+                tenderList.MoveNext();                                                                              //перебор коллекции
+                tenderCodeType.Add((Native.CmdExecutor.TenderCode)i, tenderType[tenderList.Current.Mode]);          //создание соответствия кода платежа типу 
+
+                Log($"|{i,3}|{tenderList.Current.Mode,10}|");
+            }
+        }
+
+        /// <summary>
+        /// Создание каталога и файла лога, если это необходимо
+        /// </summary>
+        public void StartLog()
+        {
+            fileName = $"log\\log{DateTime.Now.ToString("ddMMyy")}.log";
+            if (!Directory.Exists("log")) { Directory.CreateDirectory("log"); }
+            if (!File.Exists(fileName)) File.Create(fileName).Close();
         }
 
         /// <summary>

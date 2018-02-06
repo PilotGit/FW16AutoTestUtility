@@ -30,6 +30,19 @@ namespace FW16AutoTestUtility
             }
         }
 
+        public Tests(int serialPort, int baudRate = 57600)
+        {
+            TestingInterfaceFW16 = new TestingInterfaceFW16(out ecrCtrl,serialPort,baudRate);
+            if (ecrCtrl.Fw16 != null)
+            {
+                BeginTest();
+            }
+            else
+            {
+                Console.WriteLine("Не удалось провести тестирование");
+            }
+        }
+
         /// <summary>
         /// Начать тест
         /// </summary>
@@ -51,7 +64,7 @@ namespace FW16AutoTestUtility
             }
             if ((ecrCtrl.Info.Status & Fw16.Ecr.GeneralStatus.ShiftOpened) > 0)
             {
-                ecrCtrl.Shift.Close(nameOperator);                                                                   //закрыть смену если открыта
+                TestingInterfaceFW16.CloseShift(nameOperator);                                                                   //закрыть смену если открыта
             }
         }
 
