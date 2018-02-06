@@ -277,12 +277,12 @@ namespace FW16AutoTestUtility
                     for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                           //перебор видов платежей
                     {
                         sum = Math.Round(document.Total / 9 - tenderCode, 2);
-                        sum += (decimal)(random.Next(-1 * (int)sum * (10 / 100), (int)sum * (10 / 100)));
+                        sum += (decimal)(random.Next((int)(-1 * sum * (10m / 100m)), (int)(sum * (10m / 100m))));
                         TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, sum);
                         sum = document.Total - document.TotalaPaid;
                     }
 
-                    TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum + (random.Next(-1 * (int)sum * (10 / 100), (int)sum * (10 / 100))));       //оплата наличными
+                    TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, Native.CmdExecutor.TenderCode.Cash, sum + (random.Next(0, (int)(sum * (10m / 100m)))));       //оплата наличными
                     Console.Write($"({i++}/{countReciepts}) ");
                     ret += TestingInterfaceFW16.DocumentComplete(document, (ReceiptKind)receiptKind, abort);
                 }
@@ -323,7 +323,7 @@ namespace FW16AutoTestUtility
                                         costs[item % TestingInterfaceFW16.countcosts],
                                         (ItemPaymentKind)itemPaymentKind);  //создание товара
                                 }
-                                TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, document.Total + ((Native.CmdExecutor.TenderCode)tenderCode == Native.CmdExecutor.TenderCode.Cash ? (random.Next(-1 * (int)document.Total * (10 / 100), (int)document.Total * (10 / 100))) : 0));
+                                TestingInterfaceFW16.AddPayment(document, (ReceiptKind)receiptKind, (Native.CmdExecutor.TenderCode)tenderCode, document.Total + ((Native.CmdExecutor.TenderCode)tenderCode == Native.CmdExecutor.TenderCode.Cash ? (random.Next(0, (int)(document.Total * (10m / 100m)))) : 0));
 
                                 Console.Write($"({i++}/{countReciepts}) ");
 
