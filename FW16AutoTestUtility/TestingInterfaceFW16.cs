@@ -348,7 +348,7 @@ namespace FW16AutoTestUtility
         /// <param name="document">Нефискальный документ</param>
         /// <param name="nfDocType">Тип нефискального документа</param>
         /// <param name="abort">Отмена чека</param>
-        public int DocumentComplete(NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, bool abort)
+        public string DocumentComplete(NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, bool abort)
         {
             if (abort)
             {
@@ -397,7 +397,7 @@ namespace FW16AutoTestUtility
         /// <param name="document">чек который следует завершить</param>
         /// <param name="receiptKind">Тип чека коррекции</param>
         /// <param name="abort">Отменить документ</param>
-        public int DocumentComplete(Receipt document, ReceiptKind receiptKind, bool abort)
+        public string DocumentComplete(Receipt document, ReceiptKind receiptKind, bool abort)
         {
             if (abort)
             {
@@ -447,7 +447,7 @@ namespace FW16AutoTestUtility
         /// <param name="document">Документ который следует завершить</param>
         /// <param name="receiptKind">Тип чека коррекции</param>
         /// <param name="abort">Отменить документ</param>
-        public int DocumentComplete(Correction document, ReceiptKind receiptKind, bool abort)
+        public string DocumentComplete(Correction document, ReceiptKind receiptKind, bool abort)
         {
             if (abort)
             {
@@ -730,8 +730,9 @@ namespace FW16AutoTestUtility
         /// </summary>
         /// <param name="arr">Массив номеров сравниваемых регистров</param>
         /// <returns></returns>
-        public int RequestRegisters(int[] arr)
+        public string RequestRegisters(int[] arr)
         {
+            string errRegisters = "";
             string err = $"Error!\n" +
                          $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
                          $"|   #   |{"discription",lenStringDiscription}|       test       |        ККТ        |\n" +
@@ -745,6 +746,7 @@ namespace FW16AutoTestUtility
                         decimal tmp = ecrCtrl.Info.GetRegister(i);
                         if (tmp != registers[i])                                                                                                //Проверка расходения регистров
                         {
+                            errRegisters += i + ",";
                             string discription = _GetDescription((Native.CmdExecutor.RegisterCode)i);                                           //Получение описания регистра
                             int startPosition = 0;                                                                                              //Стартовая позция вывода описания
                             err += $"|{i,7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{registers[i],18:F}|{tmp,19:F}|\n";   //Вывод первой строки описания
@@ -764,8 +766,7 @@ namespace FW16AutoTestUtility
             }
             Console.Write(((err.Length > 310) ? err : ""));                                         //логирование
             Log($"Запрошеные данные с регистров{((err.Length > 310) ? "\n" + err : "")}");          //логирование
-            if (err.Length > 310) return 1;
-            return 0;
+            return errRegisters;
         }
 
         /// <summary>
