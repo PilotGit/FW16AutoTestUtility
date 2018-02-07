@@ -77,9 +77,9 @@ namespace FW16AutoTestUtility
             testingInterfaceFW16.GetRegisters();
             testingInterfaceFW16.GetCounters();
             string errRegisters = "";
-            errRegisters += TestReceiptMax();
-            errRegisters += TestCorrectionMax();
-            errRegisters += TestNonFiscalMax();
+            errRegisters += TestReceiptBigData();
+            errRegisters += TestCorrectionBigData();
+            errRegisters += TestNonFiscalBigData();
             CreateMinReceiptTest(errRegisters);
             TestReceiptDataCollection();
             TestCorrectionDataCollection();
@@ -104,8 +104,8 @@ namespace FW16AutoTestUtility
                     $"+------------+---------------+---------------+\n" + TestNonFiscalMin());
             }
             */
-            TestReceiptMax(true);                               //вызов функции тестирования чека c отменой.
-            TestNonFiscalMax(true);                             //вызов функции нефискального документа с отменой
+            TestReceiptBigData(true);                               //вызов функции тестирования чека c отменой.
+            TestNonFiscalBigData(true);                             //вызов функции нефискального документа с отменой
                                                                 //закрытие смены этого теста
             testingInterfaceFW16.CloseShift(nameOperator);      //Закрытие смены для этого теста
 
@@ -119,10 +119,10 @@ namespace FW16AutoTestUtility
         }
 
         /// <summary>
-        /// Тест нефискального документа
+        /// Тестирует нефискальный документ на большом количестве данных и с перебором всех вариантов.
         /// </summary>
         /// <param name="abort">Отменить создание нефискального документа</param>
-        private string TestNonFiscalMax(bool abort = false)
+        private string TestNonFiscalBigData(bool abort = false)
         {
             string ret = "";
             int countNFDoc = TestingInterfaceFW16.countNFDocType;
@@ -143,10 +143,9 @@ namespace FW16AutoTestUtility
 
                 ret += testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.nfDocType[nfDocType], abort);
             }
-
             return ret;
         }
-
+        /*
         /// <summary>
         /// Тест нефискального документа
         /// </summary>
@@ -180,16 +179,15 @@ namespace FW16AutoTestUtility
             }
             return err;
         }
-
+        */
         /// <summary>
-        /// Тест нефискального документа
+        /// Тестирует нефискальный документ с использованием заранее сформирванных тестовых данных
         /// </summary>
         /// <param name="abort">Отменить создание нефискального документа</param>
         private string TestNonFiscalDataCollection(bool abort = false)
         {
             string err = null;
             int i = 1;
-
             foreach (var testData in testDataNFDocList)
             {
                 testingInterfaceFW16.StartDocument(out Fw16.Ecr.NonFiscalBase document, TestingInterfaceFW16.nfDocType[testData.nfDocType]);
@@ -207,16 +205,15 @@ namespace FW16AutoTestUtility
                     err += testData.ToString();
                     testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
                 }
-
             }
             return err;
         }
 
         /// <summary>
-        /// Тест чека коррекции
+        /// Тестирует чек коррекции на большом количестве данных и с перебором всех вариантов.
         /// </summary>
         /// <param name="abort">Отменить создание чека коррекции</param>
-        private string TestCorrectionMax(bool abort = false)
+        private string TestCorrectionBigData(bool abort = false)
         {
             string ret = "";
             int i = 1;
@@ -248,7 +245,7 @@ namespace FW16AutoTestUtility
             }
             return ret;
         }
-
+        /*
         /// <summary>
         /// Тест чека коррекции
         /// </summary>
@@ -286,9 +283,9 @@ namespace FW16AutoTestUtility
             }
             return err;
         }
-
+        */
         /// <summary>
-        /// Тест чека коррекции
+        /// Тестирует чек коррекции с использованием заранее сформирванных тестовых данных
         /// </summary>
         /// <param name="abort">Отменить создание чека коррекции</param>
         private string TestCorrectionDataCollection(bool abort = false)
@@ -319,10 +316,10 @@ namespace FW16AutoTestUtility
         }
 
         /// <summary>
-        /// Тестирование чека с перебором большого количества товаров
+        /// Тестирует чек на большом количестве данных и с перебором всех вариантов.
         /// </summary>
         /// <param name="abort">Отменить создание чека</param>
-        private string TestReceiptMax(bool abort = false)
+        private string TestReceiptBigData(bool abort = false)
         {
             string ret = "";
             int countReciepts = TestingInterfaceFW16.countReceiptKind * TestingInterfaceFW16.countItemBy;
@@ -367,7 +364,7 @@ namespace FW16AutoTestUtility
             }
             return ret;
         }
-
+        /*
         /// <summary>
         /// Тестирование чека с перебором множества небольших чеков и формирование таблицы ошибочных чеков
         /// </summary>
@@ -418,7 +415,11 @@ namespace FW16AutoTestUtility
             }
             return err;
         }
-
+        */
+        /// <summary>
+        /// Тестирует чек с использованием заранее сформирванных тестовых данных
+        /// </summary>
+        /// <returns></returns>
         private string TestReceiptDataCollection()
         {
             string err = null;
@@ -450,25 +451,29 @@ namespace FW16AutoTestUtility
             return err;
         }
 
+        /// <summary>
+        /// Формирует набор данных тестирования исходя из полученных номеров регистров
+        /// </summary>
+        /// <param name="registers">Строка, с номерами регистров, разделённых , </param>
         public void CreateMinReceiptTest(string registers)
         {
-            List<string> regList = new List<string>(registers.Split(','));
-            List<TestDataReceipt> listReceiptTmp = new List<TestDataReceipt>();
+            List<string> regList = new List<string>(registers.Split(','));                      //Разделяет строку на подстроки
+            List<TestDataReceipt> listReceiptTmp = new List<TestDataReceipt>();                 //создаются временные списки
             List<TestDataCorrection> listCorrectionTmp = new List<TestDataCorrection>();
             List<TestDataNFDoc> listNFDocTmp = new List<TestDataNFDoc>();
-            regList.Remove("");
+            regList.Remove("");                                                                 //удаляется пустая строка, если она есть
             for (int i = 0; i < regList.Count; i++)
             {
-                if (regList.IndexOf(regList[i]) != i) { regList.RemoveAt(i); i--; }
+                if (regList.IndexOf(regList[i]) != i) { regList.RemoveAt(i); i--; }             //удаляются повторения
             }
-            foreach (var item in regList)
+            foreach (var item in regList)                                                       //перебор номеров регистров
             {
-                int receiptKind;
-                int nfDocType;
-                int vatCode;
-                int itemPaymentKind;
-                int itemBy;
-                int tenderCode;
+                int receiptKind;                            //Тип чека
+                int nfDocType;                              //Тип нефискального документа
+                int vatCode;                                //Ставка НДС
+                int itemPaymentKind;                        //Тип оплаты товара
+                int itemBy;                                 //Добавление товара по
+                int tenderCode;                             //Номер платежа
                 int numberRegister = Int32.Parse(item);
                 if (numberRegister > 0 && numberRegister < 5)                                                                                                                                                           //Создаёт тестовые данные для проврки ошибки в 1-4 регистрах
                 {
@@ -777,13 +782,13 @@ namespace FW16AutoTestUtility
                     tenderCode = numberRegister % 10 - 1;
                     for (nfDocType = 1; nfDocType < TestingInterfaceFW16.countNFDocType; nfDocType++)
                     {
-                        listNFDocTmp.Add(new TestDataNFDoc(nfDocType, tenderCode));
+                        listNFDocTmp.Add(new TestDataNFDoc(nfDocType, tenderCode));                                                                                                                                     //Добавление тестовых данных для нефискального документа
                     }
                     for (receiptKind = 1; receiptKind < TestingInterfaceFW16.countReceiptKind; receiptKind += 2)
                     {
                         for (vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)
                         {
-                            listCorrectionTmp.Add(new TestDataCorrection(receiptKind, vatCode, tenderCode));
+                            listCorrectionTmp.Add(new TestDataCorrection(receiptKind, vatCode, tenderCode));                                                                                                            //Добавление тестовых данных для чека коррекции
                         }
                     }
                     for (receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)
@@ -794,7 +799,7 @@ namespace FW16AutoTestUtility
                             {
                                 for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
                                 {
-                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));                                                                                 //добавление тестовых данных для чека
                                 }
                             }
                         }
@@ -809,13 +814,13 @@ namespace FW16AutoTestUtility
                         {
                             for (nfDocType = 1; nfDocType < TestingInterfaceFW16.countNFDocType; nfDocType++)
                             {
-                                listNFDocTmp.Add(new TestDataNFDoc(nfDocType, tenderCode));
+                                listNFDocTmp.Add(new TestDataNFDoc(nfDocType, tenderCode));                                                                                                                             //добавление тестовых данных для нефискального документа
                             }
                             for (receiptKind = 1; receiptKind < TestingInterfaceFW16.countReceiptKind; receiptKind += 2)
                             {
                                 for (vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)
                                 {
-                                    listCorrectionTmp.Add(new TestDataCorrection(receiptKind, vatCode, tenderCode));
+                                    listCorrectionTmp.Add(new TestDataCorrection(receiptKind, vatCode, tenderCode));                                                                                                    //добавление тестовых данных для чека коррекции
                                 }
                             }
                             for (receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)
@@ -826,7 +831,7 @@ namespace FW16AutoTestUtility
                                     {
                                         for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
                                         {
-                                            listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                            listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));                                                                         //добавление тестовых данных для чека
                                         }
                                     }
                                 }
