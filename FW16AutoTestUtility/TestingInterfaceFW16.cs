@@ -66,19 +66,23 @@ namespace FW16AutoTestUtility
         private int[] registersCorrection = { 5, 7, 51, 52, 53, 54, 55, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 111, 112, 113, 114, 115, 116, 117, 118, 119 };
         private int[] registersNFDoc = { 9, 10, 91, 92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 118, 119 };
         private int[] registersСumulative = { 191, 192, 193, 194 };
+        private int[] registersOopenReciept = { 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181 };
 
         public int[] RegistersReciept { get => registersReciept; }
         public int[] RegistersCorrection { get => registersCorrection; }
         public int[] RegistersNFDoc { get => registersNFDoc; }
         public int[] RegistersСumulative { get => registersСumulative; }
+        public int[] RegistersOopenReciept { get => registersOopenReciept; }
 
         public EcrCtrl ecrCtrl;
         public uint versionFFD = 0;                                                 //Версия ФФД
+        public decimal[] ControlRegisters = new decimal[countRegisters + 1];
         decimal[] registersTmp = new decimal[countRegisters + 1];                   //массив временных регистров
         public decimal[] registers = new decimal[countRegisters + 1];               //массив регистров
-        public int[] counters = new int[countCounters + 1];                           //массив счётчиков
+        public int[] counters = new int[countCounters + 1];                         //массив счётчиков
         public List<int> inaccessibleRegisters = new List<int>();                   //недоступные регистры
         private Random random = new Random();
+        public int countGetRegister = 0;
 
         public enum ItemBy
         {
@@ -338,7 +342,6 @@ namespace FW16AutoTestUtility
                     $"\t\t Exception={ex.Message}");
                 document = null;
             }
-            SetValue(registers, 0, 160, 182);
             SetValue(registersTmp, 0);
         }
 
@@ -387,7 +390,7 @@ namespace FW16AutoTestUtility
                 }
             }
             //return RequestRegisters(111, 120);
-            return RequestRegisters(RegistersNFDoc);
+            return RequestRegisters(this.registers, RegistersNFDoc);
 
         }
 
@@ -426,7 +429,6 @@ namespace FW16AutoTestUtility
                     Log($"\t\tЧек оформлен.\n" +
                         $"---------------------------------------------------");
                     counters[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)]++;                                      //учеличение счётчика (1-4) оформления по типу чека
-                    SetValue(registers, 0, 160, 182);
                     AddRegistersTmp();
                 }
                 catch (Exception ex)
@@ -437,8 +439,7 @@ namespace FW16AutoTestUtility
                     document = null;
                 }
             }
-            //return RequestRegisters(160, 182); //+ RequestRegisters(111, 120);
-            return RequestRegisters(RegistersReciept);
+            return RequestRegisters(this.registers, RegistersReciept);
         }
 
         /// <summary>
@@ -487,7 +488,7 @@ namespace FW16AutoTestUtility
                 }
             }
             //return RequestRegisters(111, 120);
-            return RequestRegisters(RegistersCorrection);
+            return RequestRegisters(this.registers, RegistersCorrection);
         }
 
         /// <summary>
@@ -518,7 +519,7 @@ namespace FW16AutoTestUtility
                 document.AddEntry(receiptEntry);                                                                                            //добавления товара в чек
 
                 Log($"\t\t\tТовар добавлен\n" +
-                    $"\t\t\t {code,15}|{name,12}|{itemBy,6}|{count,7}|{money,8}|{vatCode,15}");
+                    $"\t\t\t {code,15}|{name,12}|{itemBy,6}|{paymentKind,17}|{count,7}|{money,8}|{vatCode,15}");
 
                 registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10 + TestingInterfaceFW16.vatCode.IndexOf(vatCode) - 1 + 120] += receiptEntry.Cost;              //добаление в регистр (120-125,130-135,140-145,150-155) суммы по ставке НДС
                 if (TestingInterfaceFW16.vatCode.IndexOf(vatCode) != 3 && TestingInterfaceFW16.vatCode.IndexOf(vatCode) != 4)                                                               //проверка на нулевые ставки НДС
@@ -534,7 +535,7 @@ namespace FW16AutoTestUtility
             catch (Exception ex)
             {
                 Log($"\t\t\tError! Не удалось добавить товар\n" +
-                    $"\t\t\t {code,15}|{name,12}|{itemBy,5}|{count,7}|{money,8}|{vatCode,13}\n" +
+                    $"\t\t\t {code,15}|{name,12}|{itemBy,6}|{paymentKind,17}|{count,7}|{money,8}|{vatCode,13}\n" +
                     $"\t\t\t Exception={ex.Message}");
 
             }
@@ -575,8 +576,8 @@ namespace FW16AutoTestUtility
                     default:
                         break;
                 }
-                registersTmp[(int)tenderCode + 111] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
-                if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[119] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;     //добавление в регистр (119) суммы электрооного типа платежа
+                registersTmp[(int)tenderCode + 111] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы денежного ящика по номеру платежа
+                if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[119] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;     //добавление в регистр (119) суммы денежного электрооного типа платежа
 
                 registersTmp[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) + 190] += sum;                                                                                                                   //добавление в регистры (191-194) накопительный регистр по типу операции
             }
@@ -610,7 +611,14 @@ namespace FW16AutoTestUtility
                 registersTmp[(int)tenderCode + 111] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
                 if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[119] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;     //добавление в регистры (119) суммы электрооного типа платежа
 
-                //registersTmp[TestingInterfaceFW16.receiptKind1.IndexOf(receiptKind] + 190] += sum;                                                                                                                   //добавление в регистры (191-194) накопительный регистр по типу операции
+                registersTmp[(int)tenderCode + 172] += sum;                                                                                                                                 //добавление в регистры (172-179) суммы открытого документа по номеру платежа
+                switch (TestingInterfaceFW16.tenderCodeType[tenderCode])
+                {
+                    case 1: registersTmp[181] += sum; break;                                                                                                                                //добавление в регистр (181) суммы открытого документа электронного типа платежа
+                    case 0: registersTmp[180] += sum; break;                                                                                                                                //добавление в регистр (180) суммы открытого документа наличного типа платежа
+                    default:
+                        break;
+                }
             }
             catch (Exception ex)
             {
@@ -675,9 +683,22 @@ namespace FW16AutoTestUtility
                 switch (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode))
                 {
                     case 1: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;               //добавление в регистры (66,86) суммы НДС
-                    case 5: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;               //добавление в регистры (68,88) суммы НДС
-                    case 2: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;           //добавление в регистры (67,87) суммы НДС
+                    case 2: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;                //добавление в регистры (67,87) суммы НДС
+                    case 5: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;           //добавление в регистры (68,88) суммы НДС
                     case 6: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;           //добавление в регистры (69,89) суммы НДС
+                    default:
+                        break;
+                }
+
+
+                registersTmp[160] += sum;                                                                                                                       //добавление в регистр (160) суммы открытого документа
+                registersTmp[TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) + 160] += sum;                                                                   //добавление в регситр (161-166) сумма открытого документа по ставкам НДС
+                switch (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode))
+                {
+                    case 1: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 166] += Math.Round(sum * 18m / 118m, 2); break;                  //добавление в регистры (167) суммы НДС по 18%
+                    case 2: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 166] += Math.Round(sum * 10m / 110m, 2); break;                  //добавление в регистры (168) суммы НДС по 10%
+                    case 5: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 166] += Math.Round(sum * 18m / 118m, 2); break;              //добавление в регистры (169) суммы НДС по 18% включительно
+                    case 6: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 166] += Math.Round(sum * 10m / 110m, 2); break;              //добавление в регистры (170) суммы НДС по 10% включительно
                     default:
                         break;
                 }
@@ -695,33 +716,48 @@ namespace FW16AutoTestUtility
         /// </summary>
         /// <param name="startIndex">Начальный индекс</param>
         /// <param name="endIndex">Конечный индекс, не включительно</param>
-        public int RequestRegisters(ushort startIndex = 1, ushort endIndex = 0)
+        public int RequestRegisters(decimal[] testRegisters)
         {
             //endIndex = endIndex > 0 ? endIndex : (ushort)(countRegisters + 1);                                                           //проверка конечного значения если 0, то до конца
-            endIndex = countRegisters + 1;
+            ushort startIndex = 1;
+            ushort endIndex = countRegisters;
             string err = $"Error!\n" +
-                $"+-------+------------------+-------------------+\n" +
-                $"|   #   |       test       |        ККТ        |\n" +
-                $"+-------+------------------+-------------------+\n";                                                                                            //строка ошибки заполняемая при несоответсвии регистров
-            for (ushort i = startIndex; i < endIndex; i++)
+                         $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
+                         $"|   #   |{"discription",lenStringDiscription}|       test       |        ККТ        |\n" +
+                         $"+-------+--------------------------------------------------+------------------+-------------------+\n";                                       //строка ошибки заполняемая при несоответсвии регистров
+            for (ushort i = startIndex; i <= endIndex; i++)
             {
                 if (inaccessibleRegisters.IndexOf(i) == -1)
                 {
                     try
                     {
                         decimal tmp = ecrCtrl.Info.GetRegister(i);
-                        if (tmp != registers[i]) { err += $"|{i,7:D}|{registers[i],18:F}|{tmp,19:F}|\n"; }//заполнение ошибки несоотвествия регистров
+                        if (tmp != testRegisters[i])                                                                                                //Проверка расходения регистров
+                        {
+                            string discription = _GetDescription((Native.CmdExecutor.RegisterCode)i);                                           //Получение описания регистра
+                            int startPosition = 0;                                                                                              //Стартовая позция вывода описания
+                            err += $"|{i,7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{testRegisters[i],18:F}|{tmp,19:F}|\n";   //Вывод первой строки описания
+                            for (startPosition = lenStringDiscription; startPosition < discription.Length; startPosition += lenStringDiscription)
+                            {
+                                err += $"|{"",7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{"",18:F}|{"",19:F}|\n";         //Вывод последующих строк описания, если необходимо
+                            }
+                        }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
                         Console.WriteLine("Warning! Не удалось получить доступ к регистру №" + i + "");
-                        Log($"Warning! Не удалось получить доступ к регистру №{i}");
+                        Log($"Warning! Не удалось получить доступ к регистру №{i}\n" +
+                            $" Exception={ex.Message}");
                     }
                 }
             }
             Console.Write(((err.Length > 310) ? err : ""));           //логирование
             Log($"Запрошеные данные с регистров с {startIndex} по {endIndex} {((err.Length > 310) ? "\n" + err : "")}");           //логирование
-            if (err.Length > 310) return 1;
+            if (err.Length > 310)
+            {
+                GetRegisters();
+                return 1;
+            }
             return 0;
         }
 
@@ -730,7 +766,7 @@ namespace FW16AutoTestUtility
         /// </summary>
         /// <param name="arr">Массив номеров сравниваемых регистров</param>
         /// <returns></returns>
-        public string RequestRegisters(int[] arr)
+        public string RequestRegisters(decimal[] testRegisters, int[] arr)
         {
             string errRegisters = "";
             string err = $"Error!\n" +
@@ -766,6 +802,7 @@ namespace FW16AutoTestUtility
             }
             Console.Write(((err.Length > 310) ? err : ""));                                         //логирование
             Log($"Запрошеные данные с регистров{((err.Length > 310) ? "\n" + err : "")}");          //логирование
+            if (errRegisters.Length > 0) GetRegisters();
             return errRegisters;
         }
 
@@ -814,13 +851,13 @@ namespace FW16AutoTestUtility
         /// Обновление программных регистров данными из ККТ
         /// </summary>
         /// <param name="arr">Массив пропускаемых регистров</param>
-        public void GetRegisters(int[] arr = null)
+        public void GetRegisters(int[] arr)
         {
-            ushort endIndex = countRegisters + 1;
+            ushort endIndex = countRegisters;
             ushort startIndex = 1;
             string err = "";
             if (arr == null) arr = new int[] { -1 };
-            for (ushort i = startIndex; i < endIndex; i++)
+            for (ushort i = startIndex; i <= endIndex; i++)
             {
                 if (inaccessibleRegisters.IndexOf(i) == -1 && Array.IndexOf(arr, i) == -1)
                 {
@@ -846,6 +883,35 @@ namespace FW16AutoTestUtility
                 Console.WriteLine($" Были пропущены {s}");     //логирование
                 Log($" Были пропущены {s}");
             }
+        }
+        /// <summary>
+        /// Обновление программных регистров данными из ККТ
+        /// </summary>
+        public void GetRegisters()
+        {
+            ushort endIndex = countRegisters;
+            ushort startIndex = 1;
+            string err = "";
+            for (ushort i = startIndex; i <= endIndex; i++)
+            {
+                if (inaccessibleRegisters.IndexOf(i) == -1)
+                {
+                    try
+                    {
+                        registers[i] = ecrCtrl.Info.GetRegister(i);             //запрос значений регистров из ККТ
+                        if (countGetRegister == 0) ControlRegisters[i] = registers[i];
+                        Log($"Программный регистр №{i,4} получил значение {registers[i]}");
+                    }
+                    catch (Exception)
+                    {
+                        err += $"Warning! Не удалось получить получить значение регистра №{i}\n";
+                        inaccessibleRegisters.Add(i);
+                    }
+                }
+            }
+            Console.WriteLine($"{err}Значения программных регистров обновлены данными из ККТ");     //логирование
+            Log($"{err}Значения программных регистров обновлены данными из ККТ");
+            countGetRegister++;
         }
 
         /// <summary>
@@ -877,11 +943,20 @@ namespace FW16AutoTestUtility
         /// </summary>
         public void AddRegistersTmp()
         {
-            ushort endIndex = countRegisters + 1;
+            ushort endIndex = countRegisters;
             ushort startIndex = 1;
-            for (int i = startIndex; i < endIndex; i++)
+            for (int i = startIndex; i <= endIndex; i++)
             {
-                registers[i] += registersTmp[i];                                                        //применение временного массива к конечному
+                if (Array.IndexOf(RegistersOopenReciept, i) != -1)
+                {
+                    registers[i] = registersTmp[i];                                                        //применение временного массива к конечному
+                    ControlRegisters[i] = registersTmp[i];
+                }
+                else
+                {
+                    registers[i] += registersTmp[i];                                                        //применение временного массива к конечному
+                    ControlRegisters[i] += registersTmp[i];
+                }
             }
             Log($"Значения из времеенного программного регистра успешно применены");
         }
@@ -906,7 +981,7 @@ namespace FW16AutoTestUtility
         /// Пишет лог
         /// </summary>
         /// <param name="message">Строка, записываемая в лог</param>
-        private void Log(string message)
+        public void Log(string message)
         {
             string[] messages = message.Split('\n');
             foreach (string i in messages)
