@@ -78,17 +78,17 @@ namespace FW16AutoTestUtility
             testingInterfaceFW16.GetCounters();
 
             string errRegisters = "";
-            //errRegisters += TestReceiptBigData();
+            errRegisters += TestReceiptBigData();
             errRegisters += TestCorrectionBigData();
-            //errRegisters += TestNonFiscalBigData();
+            errRegisters += TestNonFiscalBigData();
 
-            //CreateMinReceiptTest(errRegisters);
-            //TestReceiptDataCollection();
-            //TestCorrectionDataCollection();
-            //TestNonFiscalDataCollection();
+            CreateMinReceiptTest(errRegisters);
+            TestReceiptDataCollection();
+            TestCorrectionDataCollection();
+            TestNonFiscalDataCollection();
 
-            //TestReceiptBigData(true);                               //вызов функции тестирования чека c отменой.
-            //TestNonFiscalBigData(true);                             //вызов функции нефискального документа с отменой
+            TestReceiptBigData(true);                               //вызов функции тестирования чека c отменой.
+            TestNonFiscalBigData(true);                             //вызов функции нефискального документа с отменой
 
             testingInterfaceFW16.CloseShift(nameOperator);      //Закрытие смены для этого теста
 
