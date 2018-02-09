@@ -201,6 +201,10 @@ namespace FW16AutoTestUtility
             return 0;
         }
 
+        /// <summary>
+        /// Подключение к ККТ
+        /// </summary>
+        /// <returns></returns>
         int ConnectToFW()
         {
             try
@@ -222,6 +226,9 @@ namespace FW16AutoTestUtility
             return 0;
         }
 
+        /// <summary>
+        /// Вывод информации о ККТ
+        /// </summary>
         void ShowInformation()
         {
             versionFFD = ecrCtrl.Info.FfdVersion;
@@ -237,7 +244,10 @@ namespace FW16AutoTestUtility
                 "\nФФД: v" + versionFFD);
         }
 
-
+        /// <summary>
+        /// Открыть смену
+        /// </summary>
+        /// <param name="nameOperator">Имя оператора</param>
         public void OpenShift(string nameOperator)
         {
             try
@@ -252,6 +262,10 @@ namespace FW16AutoTestUtility
             }
         }
 
+        /// <summary>
+        /// Закрыть смену
+        /// </summary>
+        /// <param name="nameOperator">Имя оператора</param>
         internal void CloseShift(string nameOperator)
         {
             try
@@ -291,58 +305,39 @@ namespace FW16AutoTestUtility
         }
 
         /// <summary>
-        /// Открывает чек коррекции
+        /// Добавление суммы по типу оплаты.
         /// </summary>
-        /// <param name="document">Чек коррекции который следует открыть</param>
-        /// <param name="nameOerator">Имя оператора</param>
-        /// <param name="receiptKind">Тип чека коррекции</param>
-        public void StartDocument(out Correction document, string nameOerator, ReceiptKind receiptKind)
+        /// <param name="document">Нефискальный документ</param>
+        /// <param name="nfDocType">Тип нефискального документа</param>
+        /// <param name="tenderCode">Тип оплаты</param>
+        /// <param name="sum">Сумма</param>
+        public void AddTender(NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
             try
             {
-                document = ecrCtrl.Shift.BeginCorrection(nameOerator, receiptKind);
-                Log($"\t\tЧек коррекции открыт.\n" +
-                    $"\t\t Type={receiptKind}");
-            }
-            catch (Exception ex)
-            {
-                Log($"\t\tError! Не удалось открыть чек коррекции.\n" +
-                    $"\t\t Kind={receiptKind}\n" +
-                    $"\t\t Exception={ex.Message}");
-                document = null;
-            }
-            SetValue(registersTmp, 0);
-        }
-
-        /// <summary>
-        /// Открывает чек
-        /// </summary>
-        /// <param name="document">Чек который следует открыть</param>
-        /// <param name="nameOerator">Имя оператора</param>
-        /// <param name="receiptKind">Тип чека</param>
-        public void StartDocument(out Receipt document, string nameOerator, ReceiptKind receiptKind)
-        {
-            try
-            {
-                document = ecrCtrl.Shift.BeginReceipt(nameOerator, receiptKind, new
+                var tender = new Tender
                 {
-                    Taxation = Fs.Native.TaxationType.Agro,         //налогообложение по умолчанию
-                    CustomerAddress = "qwe@ewq.xxx",                //адрес получателя
-                    SenderAddress = "ewq@qwe.yyy"                   //адрес отправтеля
-                });
-                Log($"\t\tЧек открыт.\n" +
-                    $"\t\t Operator={nameOerator}\n" +
-                    $"\t\t Type={receiptKind}");
+                    Amount = sum,
+                    Code = tenderCode
+                };
+                document.AddTender(tender);
+
+                Log($"\t\t\tСумма добавлена\n" +
+                    $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[tenderCode],7}|{sum,8}");
+
+                registersTmp[TestingInterfaceFW16.nfDocType.IndexOf(nfDocType) + 8] += sum;                                                                                                                                 //добавление в регистры (9,10) суммы по типу нефискального документа
+                registersTmp[(int)tenderCode + TestingInterfaceFW16.nfDocType.IndexOf(nfDocType) * 10 + 81] += sum;                                                                                                         //добавление в регистры (91-98,101-108) суммы по номеру платежа
+                if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[TestingInterfaceFW16.nfDocType.IndexOf(nfDocType) * 10 + 89] += sum;                            //добавление в регистры (99,109) суммы электронных типов платежей
+
+                registersTmp[(int)tenderCode + 111] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum;                                                                               //добавление в регистры (111,118) суммы по номеру платежа
+                if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[119] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum;  //добавление в регистры (119) суммы электронных типов платежей
             }
             catch (Exception ex)
             {
-                Log($"\t\tError! Не удалось открыть чек.\n" +
-                    $"\t\t Kind={receiptKind}\n" +
-                    $"\t\t Operator={nameOerator}\n" +
-                    $"\t\t Exception={ex.Message}");
-                document = null;
+                Log($"\t\t\tError! Не удалось добавить сумму\n" +
+                    $"\t\t\t {(int)tenderCode,3}|{TestingInterfaceFW16.tenderCodeType[tenderCode],7}|{sum,8}\n" +
+                    $"\t\t\t Exception={ex.Message}");
             }
-            SetValue(registersTmp, 0);
         }
 
         /// <summary>
@@ -395,51 +390,113 @@ namespace FW16AutoTestUtility
         }
 
         /// <summary>
-        /// Заверает чек
+        /// Открывает чек коррекции
         /// </summary>
-        /// <param name="document">чек который следует завершить</param>
+        /// <param name="document">Чек коррекции который следует открыть</param>
+        /// <param name="nameOerator">Имя оператора</param>
         /// <param name="receiptKind">Тип чека коррекции</param>
-        /// <param name="abort">Отменить документ</param>
-        public string DocumentComplete(Receipt document, ReceiptKind receiptKind, bool abort)
+        public void StartDocument(out Correction document, string nameOerator, ReceiptKind receiptKind)
         {
-            if (abort)
+            try
             {
-                try
+                document = ecrCtrl.Shift.BeginCorrection(nameOerator, receiptKind);
+                Log($"\t\tЧек коррекции открыт.\n" +
+                    $"\t\t Type={receiptKind}");
+            }
+            catch (Exception ex)
+            {
+                Log($"\t\tError! Не удалось открыть чек коррекции.\n" +
+                    $"\t\t Kind={receiptKind}\n" +
+                    $"\t\t Exception={ex.Message}");
+                document = null;
+            }
+            SetValue(registersTmp, 0);
+        }
+
+        /// <summary>
+        /// Добавление суммы по типу оплаты.
+        /// </summary>
+        /// <param name="document">Чек коррекции</param>
+        /// <param name="receiptKind">Тип чека (Приход, изъятие)</param>
+        /// <param name="tenderCode">Тип оплаты</param>
+        /// <param name="sum">Сумма</param>
+        public void AddTender(Correction document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        {
+            try
+            {
+                document.AddTender(tenderCode, sum);
+
+                Log($"\t\t\tСумма коррекции добавлена\n" +
+                        $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[tenderCode],7}|{sum,8}");
+
+                registersTmp[tenderCodeType[tenderCode] + TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 10 + 41] += sum;                                                                                  //добавление в регистры (51-55,71-75) суммы по типу платежа
+                registersTmp[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) + 4] += sum;                                                                                                                     //добавление в регистры (5,7) суммы по типу чека коррекции
+
+                registersTmp[(int)tenderCode + 111] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
+                if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[119] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;     //добавление в регистры (119) суммы электрооного типа платежа
+
+                registersTmp[(int)tenderCode + 172] += sum;                                                                                                                                 //добавление в регистры (172-179) суммы открытого документа по номеру платежа
+                switch (TestingInterfaceFW16.tenderCodeType[tenderCode])
                 {
-                    document.Abort();                                                               //отмена документа
-                    Console.WriteLine("Отменён чек типа " + receiptKind + "");                      //логирование
-                    Log($"\t\tЧек отменён.\n" +
-                        $"---------------------------------------------------");
-                    counters[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) + 11]++;                                 //увеличение счётчика (12-15) отмены по типу чека
-                }
-                catch (Exception ex)
-                {
-                    Log($"\t\tError! Не удалось отменить чек.\n" +
-                        $"\t\t Exception={ex.Message}" +
-                        $"---------------------------------------------------");
-                    document = null;
+                    case 1: registersTmp[181] += sum; break;                                                                                                                                //добавление в регистр (181) суммы открытого документа электронного типа платежа
+                    case 0: registersTmp[180] += sum; break;                                                                                                                                //добавление в регистр (180) суммы открытого документа наличного типа платежа
+                    default:
+                        break;
                 }
             }
-            else
+            catch (Exception ex)
             {
-                try
+                Log($"\t\t\tError! Не удалось добавить сумму коррекции\n" +
+                    $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[tenderCode],7}|{sum,8}\n" +
+                    $"\t\t\t Exception={ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Добавление суммы по ставке НДС.
+        /// </summary>
+        /// <param name="document">Чек коррекции</param>
+        /// <param name="receiptKind">Тип чека (Приход, изъятие)</param>
+        /// <param name="vatCode">Ставка НДС</param>
+        /// <param name="sum">Сумма</param>
+        public void AddAmount(Correction document, ReceiptKind receiptKind, VatCode vatCode, decimal sum)
+        {
+            try
+            {
+                document.AddAmount(vatCode, sum);
+
+                Log($"\t\t\tСумма коррекции добавлена\n" +
+                    $"\t\t\t {vatCode,13}|{sum,8}");
+                registersTmp[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 10 + TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) + 49] += sum;                                                                      //добавление в регистры (60-65,80-85) суммы по ставкам НДС
+                switch (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode))
                 {
-                    document.Complete();                                                            //закрытие чека
-                    Console.WriteLine("Оформлен чек типа " + receiptKind + "");                     //логирование
-                    Log($"\t\tЧек оформлен.\n" +
-                        $"---------------------------------------------------");
-                    counters[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)]++;                                      //учеличение счётчика (1-4) оформления по типу чека
-                    AddRegistersTmp();
+                    case 1: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;               //добавление в регистры (66,86) суммы НДС
+                    case 2: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;                //добавление в регистры (67,87) суммы НДС
+                    case 5: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;           //добавление в регистры (68,88) суммы НДС
+                    case 6: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;           //добавление в регистры (69,89) суммы НДС
+                    default:
+                        break;
                 }
-                catch (Exception ex)
+
+
+                registersTmp[160] += sum;                                                                                                                       //добавление в регистр (160) суммы открытого документа
+                registersTmp[TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) + 160] += sum;                                                                   //добавление в регситр (161-166) сумма открытого документа по ставкам НДС
+                switch (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode))
                 {
-                    Log($"\t\tError! Не удалось оформить чек.\n" +
-                        $"\t\t Exception={ex.Message}" +
-                        $"---------------------------------------------------");
-                    document = null;
+                    case 1: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 166] += Math.Round(sum * 18m / 118m, 2); break;                  //добавление в регистры (167) суммы НДС по 18%
+                    case 2: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 166] += Math.Round(sum * 10m / 110m, 2); break;                  //добавление в регистры (168) суммы НДС по 10%
+                    case 5: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 166] += Math.Round(sum * 18m / 118m, 2); break;              //добавление в регистры (169) суммы НДС по 18% включительно
+                    case 6: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 166] += Math.Round(sum * 10m / 110m, 2); break;              //добавление в регистры (170) суммы НДС по 10% включительно
+                    default:
+                        break;
                 }
             }
-            return RequestRegisters(this.registers, RegistersReciept);
+            catch (Exception ex)
+            {
+                Log($"\t\t\tError! Не удалось добавить сумму коррекции\n" +
+                    $"\t\t\t {vatCode,13}|{sum,8}\n" +
+                    $"\t\t\t Exception={ex.Message}");
+            }
         }
 
         /// <summary>
@@ -489,6 +546,37 @@ namespace FW16AutoTestUtility
             }
             //return RequestRegisters(111, 120);
             return RequestRegisters(this.registers, RegistersCorrection);
+        }
+
+        /// <summary>
+        /// Открывает чек
+        /// </summary>
+        /// <param name="document">Чек который следует открыть</param>
+        /// <param name="nameOerator">Имя оператора</param>
+        /// <param name="receiptKind">Тип чека</param>
+        public void StartDocument(out Receipt document, string nameOerator, ReceiptKind receiptKind)
+        {
+            try
+            {
+                document = ecrCtrl.Shift.BeginReceipt(nameOerator, receiptKind, new
+                {
+                    Taxation = Fs.Native.TaxationType.Agro,         //налогообложение по умолчанию
+                    CustomerAddress = "qwe@ewq.xxx",                //адрес получателя
+                    SenderAddress = "ewq@qwe.yyy"                   //адрес отправтеля
+                });
+                Log($"\t\tЧек открыт.\n" +
+                    $"\t\t Operator={nameOerator}\n" +
+                    $"\t\t Type={receiptKind}");
+            }
+            catch (Exception ex)
+            {
+                Log($"\t\tError! Не удалось открыть чек.\n" +
+                    $"\t\t Kind={receiptKind}\n" +
+                    $"\t\t Operator={nameOerator}\n" +
+                    $"\t\t Exception={ex.Message}");
+                document = null;
+            }
+            SetValue(registersTmp, 0);
         }
 
         /// <summary>
@@ -590,125 +678,51 @@ namespace FW16AutoTestUtility
         }
 
         /// <summary>
-        /// Добавление суммы по типу оплаты.
+        /// Заверает чек
         /// </summary>
-        /// <param name="document">Чек коррекции</param>
-        /// <param name="receiptKind">Тип чека (Приход, изъятие)</param>
-        /// <param name="tenderCode">Тип оплаты</param>
-        /// <param name="sum">Сумма</param>
-        public void AddTender(Correction document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
+        /// <param name="document">чек который следует завершить</param>
+        /// <param name="receiptKind">Тип чека коррекции</param>
+        /// <param name="abort">Отменить документ</param>
+        public string DocumentComplete(Receipt document, ReceiptKind receiptKind, bool abort)
         {
-            try
+            if (abort)
             {
-                document.AddTender(tenderCode, sum);
-
-                Log($"\t\t\tСумма коррекции добавлена\n" +
-                        $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[tenderCode],7}|{sum,8}");
-
-                registersTmp[tenderCodeType[tenderCode] + TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 10 + 41] += sum;                                                                                  //добавление в регистры (51-55,71-75) суммы по типу платежа
-                registersTmp[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) + 4] += sum;                                                                                                                     //добавление в регистры (5,7) суммы по типу чека коррекции
-
-                registersTmp[(int)tenderCode + 111] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;                                                                                  //добавление в регистры (111-118) суммы по номеру платежа
-                if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[119] += TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) % 3 == 1 ? sum : -sum;     //добавление в регистры (119) суммы электрооного типа платежа
-
-                registersTmp[(int)tenderCode + 172] += sum;                                                                                                                                 //добавление в регистры (172-179) суммы открытого документа по номеру платежа
-                switch (TestingInterfaceFW16.tenderCodeType[tenderCode])
+                try
                 {
-                    case 1: registersTmp[181] += sum; break;                                                                                                                                //добавление в регистр (181) суммы открытого документа электронного типа платежа
-                    case 0: registersTmp[180] += sum; break;                                                                                                                                //добавление в регистр (180) суммы открытого документа наличного типа платежа
-                    default:
-                        break;
+                    document.Abort();                                                               //отмена документа
+                    Console.WriteLine("Отменён чек типа " + receiptKind + "");                      //логирование
+                    Log($"\t\tЧек отменён.\n" +
+                        $"---------------------------------------------------");
+                    counters[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) + 11]++;                                 //увеличение счётчика (12-15) отмены по типу чека
+                }
+                catch (Exception ex)
+                {
+                    Log($"\t\tError! Не удалось отменить чек.\n" +
+                        $"\t\t Exception={ex.Message}" +
+                        $"---------------------------------------------------");
+                    document = null;
                 }
             }
-            catch (Exception ex)
+            else
             {
-                Log($"\t\t\tError! Не удалось добавить сумму коррекции\n" +
-                    $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[tenderCode],7}|{sum,8}\n" +
-                    $"\t\t\t Exception={ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Добавление суммы по типу оплаты.
-        /// </summary>
-        /// <param name="document">Нефискальный документ</param>
-        /// <param name="nfDocType">Тип нефискального документа</param>
-        /// <param name="tenderCode">Тип оплаты</param>
-        /// <param name="sum">Сумма</param>
-        public void AddTender(NonFiscalBase document, Native.CmdExecutor.NFDocType nfDocType, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
-        {
-            try
-            {
-                var tender = new Tender
+                try
                 {
-                    Amount = sum,
-                    Code = tenderCode
-                };
-                document.AddTender(tender);
-
-                Log($"\t\t\tСумма добавлена\n" +
-                    $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[tenderCode],7}|{sum,8}");
-
-                registersTmp[TestingInterfaceFW16.nfDocType.IndexOf(nfDocType) + 8] += sum;                                                                                                                                 //добавление в регистры (9,10) суммы по типу нефискального документа
-                registersTmp[(int)tenderCode + TestingInterfaceFW16.nfDocType.IndexOf(nfDocType) * 10 + 81] += sum;                                                                                                         //добавление в регистры (91-98,101-108) суммы по номеру платежа
-                if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[TestingInterfaceFW16.nfDocType.IndexOf(nfDocType) * 10 + 89] += sum;                            //добавление в регистры (99,109) суммы электронных типов платежей
-
-                registersTmp[(int)tenderCode + 111] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum;                                                                               //добавление в регистры (111,118) суммы по номеру платежа
-                if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[119] += nfDocType == Native.CmdExecutor.NFDocType.Income ? sum : -sum;  //добавление в регистры (119) суммы электронных типов платежей
-            }
-            catch (Exception ex)
-            {
-                Log($"\t\t\tError! Не удалось добавить сумму\n" +
-                    $"\t\t\t {(int)tenderCode,3}|{TestingInterfaceFW16.tenderCodeType[tenderCode],7}|{sum,8}\n" +
-                    $"\t\t\t Exception={ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Добавление суммы по ставке НДС.
-        /// </summary>
-        /// <param name="document">Чек коррекции</param>
-        /// <param name="receiptKind">Тип чека (Приход, изъятие)</param>
-        /// <param name="vatCode">Ставка НДС</param>
-        /// <param name="sum">Сумма</param>
-        public void AddAmount(Correction document, ReceiptKind receiptKind, VatCode vatCode, decimal sum)
-        {
-            try
-            {
-                document.AddAmount(vatCode, sum);
-
-                Log($"\t\t\tСумма коррекции добавлена\n" +
-                    $"\t\t\t {vatCode,13}|{sum,8}");
-                registersTmp[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 10 + TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) + 49] += sum;                                                                      //добавление в регистры (60-65,80-85) суммы по ставкам НДС
-                switch (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode))
-                {
-                    case 1: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;               //добавление в регистры (66,86) суммы НДС
-                    case 2: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;                //добавление в регистры (67,87) суммы НДС
-                    case 5: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 50 + 5] += Math.Round(sum * 18m / 118m, 2); break;           //добавление в регистры (68,88) суммы НДС
-                    case 6: registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)) * 10 + (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 50 + 5] += Math.Round(sum * 10m / 110m, 2); break;           //добавление в регистры (69,89) суммы НДС
-                    default:
-                        break;
+                    document.Complete();                                                            //закрытие чека
+                    Console.WriteLine("Оформлен чек типа " + receiptKind + "");                     //логирование
+                    Log($"\t\tЧек оформлен.\n" +
+                        $"---------------------------------------------------");
+                    counters[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)]++;                                      //учеличение счётчика (1-4) оформления по типу чека
+                    AddRegistersTmp();
                 }
-
-
-                registersTmp[160] += sum;                                                                                                                       //добавление в регистр (160) суммы открытого документа
-                registersTmp[TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) + 160] += sum;                                                                   //добавление в регситр (161-166) сумма открытого документа по ставкам НДС
-                switch (TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode))
+                catch (Exception ex)
                 {
-                    case 1: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 166] += Math.Round(sum * 18m / 118m, 2); break;                  //добавление в регистры (167) суммы НДС по 18%
-                    case 2: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode)) + 166] += Math.Round(sum * 10m / 110m, 2); break;                  //добавление в регистры (168) суммы НДС по 10%
-                    case 5: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 166] += Math.Round(sum * 18m / 118m, 2); break;              //добавление в регистры (169) суммы НДС по 18% включительно
-                    case 6: registersTmp[(TestingInterfaceFW16.vatCodeCorr.IndexOf(vatCode) - 2) + 166] += Math.Round(sum * 10m / 110m, 2); break;              //добавление в регистры (170) суммы НДС по 10% включительно
-                    default:
-                        break;
+                    Log($"\t\tError! Не удалось оформить чек.\n" +
+                        $"\t\t Exception={ex.Message}" +
+                        $"---------------------------------------------------");
+                    document = null;
                 }
             }
-            catch (Exception ex)
-            {
-                Log($"\t\t\tError! Не удалось добавить сумму коррекции\n" +
-                    $"\t\t\t {vatCode,13}|{sum,8}\n" +
-                    $"\t\t\t Exception={ex.Message}");
-            }
+            return RequestRegisters(this.registers, RegistersReciept);
         }
 
         /// <summary>
@@ -846,7 +860,6 @@ namespace FW16AutoTestUtility
             Log($"Запрошеные данные с счётчиков с {startIndex} по {endIndex} {((err.Length > 310) ? "\n" + err : "")}");           //логирование
         }
 
-
         /// <summary>
         /// Обновление программных регистров данными из ККТ
         /// </summary>
@@ -884,6 +897,7 @@ namespace FW16AutoTestUtility
                 Log($" Были пропущены {s}");
             }
         }
+
         /// <summary>
         /// Обновление программных регистров данными из ККТ
         /// </summary>
@@ -991,6 +1005,11 @@ namespace FW16AutoTestUtility
 
         }
 
+        /// <summary>
+        /// Получить описание enum
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         internal static string _GetDescription(Enum value)
         {
             FieldInfo field = value.GetType().GetField(value.ToString());
