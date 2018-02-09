@@ -255,14 +255,15 @@ namespace FW16AutoTestUtility
                             }
                         }
                     }
-                    decimal sumCorr = itemBy == 1 ? ((document.Total * 100) % 100)/100m : 0.99m - ((document.Total * 100) % 100) / 100m;
+                    decimal sumCorr = itemBy == 1 ? ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100)/100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
                     testingInterfaceFW16.SetAdjustment(document,TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
                     decimal sum = 0m;
+                    decimal totalaPaid = 0;
                     for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                           //перебор видов платежей
                     {
-                        sum = Math.Round(document.Total / 9 - tenderCode, 2);
+                        totalaPaid+= sum = Math.Round(testingInterfaceFW16.RegistersTmp[160] / 9 - tenderCode, 2);
                         testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[receiptKind], (Native.CmdExecutor.TenderCode)tenderCode, sum);
-                        sum = document.Total - document.TotalaPaid;
+                        sum = testingInterfaceFW16.RegistersTmp[160] - totalaPaid;
                     }
 
                     testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[receiptKind], Native.CmdExecutor.TenderCode.Cash, sum + (random.Next(0, (int)(sum * (10m / 100m)))));       //оплата наличными
@@ -295,7 +296,7 @@ namespace FW16AutoTestUtility
                         costs[testData.receiptKind - 1, item % TestingInterfaceFW16.countcosts],
                         TestingInterfaceFW16.itemPaymentKind[testData.itemPaymentKind]);  //создание товара
                 }
-                testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], (Native.CmdExecutor.TenderCode)testData.tenderCode, document.Total + ((Native.CmdExecutor.TenderCode)testData.tenderCode == Native.CmdExecutor.TenderCode.Cash ? (random.Next(0, (int)(document.Total * (10m / 100m)))) : 0));
+                testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], (Native.CmdExecutor.TenderCode)testData.tenderCode, testingInterfaceFW16.RegistersTmp[160] + ((Native.CmdExecutor.TenderCode)testData.tenderCode == Native.CmdExecutor.TenderCode.Cash ? (random.Next(0, (int)(testingInterfaceFW16.RegistersTmp[160] * (10m / 100m)))) : 0));
 
                 Console.Write($"({i++}/{testDataReceiptList.Count}) {testData.ToString()}");
                 if (testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], false).Length != 0)

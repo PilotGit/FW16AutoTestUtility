@@ -62,11 +62,11 @@ namespace FW16AutoTestUtility
 
         private string fileName;
 
-        private int[] registersReciept = { 1, 2, 3, 4, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 111, 112, 113, 114, 115, 116, 117, 118, 119, 49, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 200, 201, 202, 203, 204, 205, 206, 210, 211, 212, 213, 214, 215, 216, 220, 221, 223, 224, 225, 226, 230, 231, 232, 233, 234, 235, 236 };
-        private int[] registersCorrection = { 5, 7, 51, 52, 53, 54, 55, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 111, 112, 113, 114, 115, 116, 117, 118, 119, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181 };
-        private int[] registersNFDoc = { 9, 10, 91, 92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 118, 119 };
-        private int[] registersСumulative = { 191, 192, 193, 194 };
-        private int[] registersOopenReciept = { 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181 };
+        private readonly int[] registersReciept = { 1, 2, 3, 4, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 111, 112, 113, 114, 115, 116, 117, 118, 119, 49, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 200, 201, 202, 203, 204, 205, 206, 210, 211, 212, 213, 214, 215, 216, 220, 221, 223, 224, 225, 226, 230, 231, 232, 233, 234, 235, 236 };
+        private readonly int[] registersCorrection = { 5, 7, 51, 52, 53, 54, 55, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 111, 112, 113, 114, 115, 116, 117, 118, 119, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181 };
+        private readonly int[] registersNFDoc = { 9, 10, 91, 92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 118, 119 };
+        private readonly int[] registersСumulative = { 191, 192, 193, 194 };
+        private readonly int[] registersOopenReciept = { 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181 };
 
         public int[] RegistersReciept { get => registersReciept; }
         public int[] RegistersCorrection { get => registersCorrection; }
@@ -74,12 +74,15 @@ namespace FW16AutoTestUtility
         public int[] RegistersСumulative { get => registersСumulative; }
         public int[] RegistersOopenReciept { get => registersOopenReciept; }
 
-        public EcrCtrl ecrCtrl;
-        public uint versionFFD = 0;                                                 //Версия ФФД
-        public decimal[] ControlRegisters = new decimal[countRegisters + 1];
+        public decimal[] RegistersTmp { get => registersTmp;}
+        public decimal[] ControlRegisters { get => controlRegisters; }
+
+        readonly EcrCtrl ecrCtrl;
+        readonly uint versionFFD = 0;                                                 //Версия ФФД
+        decimal[] controlRegisters = new decimal[countRegisters + 1];
         decimal[] registersTmp = new decimal[countRegisters + 1];                   //массив временных регистров
-        public decimal[] registers = new decimal[countRegisters + 1];               //массив регистров
-        public int[] counters = new int[countCounters + 1];                         //массив счётчиков
+        decimal[] registers = new decimal[countRegisters + 1];               //массив регистров
+        int[] counters = new int[countCounters + 1];                         //массив счётчиков
         public List<int> inaccessibleRegisters = new List<int>();                   //недоступные регистры
         private Random random = new Random();
         public int countGetRegister = 0;
@@ -139,6 +142,18 @@ namespace FW16AutoTestUtility
             this.ecrCtrl = ecrCtrl = new EcrCtrl();
             if (ConnectToFW() == 0)
             {
+                versionFFD = ecrCtrl.Info.FfdVersion;
+                Console.WriteLine("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
+                    "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
+                    "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
+                    "\nМодель: " + ecrCtrl.Info.EcrInfo.Model +
+                    "\nФФД: v" + versionFFD);
+                Log("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
+                    "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
+                    "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
+                    "\nМодель: " + ecrCtrl.Info.EcrInfo.Model +
+                    "\nФФД: v" + versionFFD);
+
                 CreateTenderCodeTypeDictionary();
             }
         }
@@ -150,6 +165,18 @@ namespace FW16AutoTestUtility
             this.ecrCtrl = ecrCtrl = new EcrCtrl();
             if (ConnectToFW(serialPort, baudRate) == 0)
             {
+                versionFFD = ecrCtrl.Info.FfdVersion;
+                Console.WriteLine("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
+                    "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
+                    "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
+                    "\nМодель: " + ecrCtrl.Info.EcrInfo.Model +
+                    "\nФФД: v" + versionFFD);
+                Log("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
+                    "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
+                    "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
+                    "\nМодель: " + ecrCtrl.Info.EcrInfo.Model +
+                    "\nФФД: v" + versionFFD);
+
                 CreateTenderCodeTypeDictionary();
             }
         }
@@ -197,7 +224,6 @@ namespace FW16AutoTestUtility
                 Log($"Произведено подключение к ККТ.\n" +
                     $" Port={serialPort}\n" +
                     $" Rate={baudRate}");
-                ShowInformation();
             }
             catch (Exception excep)
             {
@@ -222,7 +248,6 @@ namespace FW16AutoTestUtility
                 Log($"Произведено подключение к ККТ.\n" +
                     $" Port=default\n" +
                     $" Rate=default");
-                ShowInformation();
             }
             catch (Exception excep)
             {
@@ -232,24 +257,6 @@ namespace FW16AutoTestUtility
                 return 1;
             }
             return 0;
-        }
-
-        /// <summary>
-        /// Вывод информации о ККТ
-        /// </summary>
-        void ShowInformation()
-        {
-            versionFFD = ecrCtrl.Info.FfdVersion;
-            Console.WriteLine("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
-                "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
-                "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
-                "\nМодель: " + ecrCtrl.Info.EcrInfo.Model +
-                "\nФФД: v" + versionFFD);
-            Log("Версия прошивки: " + ecrCtrl.Info.FactoryInfo.FwBuild +
-                "\nКод firmware: " + ecrCtrl.Info.FactoryInfo.FwType +
-                "\nСерийный номер ККТ: " + ecrCtrl.Info.EcrInfo.Id +
-                "\nМодель: " + ecrCtrl.Info.EcrInfo.Model +
-                "\nФФД: v" + versionFFD);
         }
 
         /// <summary>
@@ -646,9 +653,12 @@ namespace FW16AutoTestUtility
         /// <param name="sum">Сумма оплаты</param>
         public void AddPayment(Receipt document, ReceiptKind receiptKind, Native.CmdExecutor.TenderCode tenderCode, decimal sum)
         {
+            decimal total = registersTmp[160];
+            decimal totalPaid = 0m;
+            for (int i = 172; i < 180; i++) totalPaid += registersTmp[i];
+            decimal balance = (total - totalPaid);
             try
             {
-                decimal balance = (document.Total - document.TotalaPaid);
                 document.AddPayment(tenderCode, sum);                                                                                                                                       //добавление оплаты 
 
                 Log($"\t\t\tОплата добавлена\n" +
@@ -702,6 +712,8 @@ namespace FW16AutoTestUtility
                     $"\t\t\t {description,8}|{sum,8}\n");
 
                 registersTmp[180 + TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 2 + (int)adjustmentType] += sum;
+
+                registersTmp[160] += sum;
             }
             catch (Exception ex)
             {
@@ -947,7 +959,7 @@ namespace FW16AutoTestUtility
                     try
                     {
                         registers[i] = ecrCtrl.Info.GetRegister(i);             //запрос значений регистров из ККТ
-                        if (countGetRegister == 0) ControlRegisters[i] = registers[i];
+                        if (countGetRegister == 0) controlRegisters[i] = registers[i];
                         Log($"Программный регистр №{i,4} получил значение {registers[i]}");
                     }
                     catch (Exception)
@@ -998,12 +1010,12 @@ namespace FW16AutoTestUtility
                 if (Array.IndexOf(RegistersOopenReciept, i) != -1)
                 {
                     registers[i] = registersTmp[i];                                                        //применение временного массива к конечному
-                    ControlRegisters[i] = registersTmp[i];
+                    controlRegisters[i] = registersTmp[i];
                 }
                 else
                 {
                     registers[i] += registersTmp[i];                                                        //применение временного массива к конечному
-                    ControlRegisters[i] += registersTmp[i];
+                    controlRegisters[i] += registersTmp[i];
                 }
             }
             Log($"Значения из времеенного программного регистра успешно применены");
