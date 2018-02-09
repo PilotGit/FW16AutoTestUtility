@@ -90,6 +90,14 @@ namespace FW16AutoTestUtility
             cost = 1
         }
 
+        public enum AdjustmentType
+        {
+            [Description("Скидка")]
+            sale = 0,
+            [Description("Наценка")]
+            markup = 1
+        }
+
         /// <summary>
         /// Соответствие типа НДС его номеру
         /// </summary>
@@ -673,6 +681,32 @@ namespace FW16AutoTestUtility
             {
                 Log($"\t\t\tError! Не удалось добавить оплату\n" +
                     $"\t\t\t {(int)tenderCode,3}|{(Native.CmdExecutor.TenderType)TestingInterfaceFW16.tenderCodeType[tenderCode],7}|{sum,8}\n" +
+                    $"\t\t\t Exception={ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Добавление скидки/наценки 
+        /// </summary>
+        /// <param name="document">Чек в который необходимо добавить товар</param>
+        /// <param name="receiptKind">Тип чека (Приход, Отмена прихода..)</param>
+        /// <param name="sum">Сумма коррекции</param>
+        public void SetAdjustment(Receipt document, ReceiptKind receiptKind, decimal sum)
+        {
+            AdjustmentType adjustmentType = (sum > 0m ? AdjustmentType.markup : AdjustmentType.sale);
+            string description = _GetDescription(adjustmentType);
+            try
+            {
+                document.SetAdjustment(sum, description);
+                Log($"\t\t\tДобавлена коррекция суммы.\n" +
+                    $"\t\t\t {description,8}|{sum,8}\n");
+
+                registersTmp[180 + TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 2 + (int)adjustmentType] += sum;
+            }
+            catch (Exception ex)
+            {
+                Log($"\t\t\tError! Не удалось коррекцию суммы.\n" +
+                    $"\t\t\t {description,8}|{sum,8}\n" +
                     $"\t\t\t Exception={ex.Message}");
             }
         }

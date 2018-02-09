@@ -14,7 +14,7 @@ namespace FW16AutoTestUtility
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
         string nameOperator = "test program";                        //имя касира 
         decimal[,] costs = new decimal[,] { { 217m, 193.7m }, { 30m, 18.36m }, { 147m, 5.63m }, { 961m, 101.25m } };          //варианты цен
-        decimal[,] counts = new decimal[4, 4] { { 1m, 5m, 0.17m, 1.73m }, { 7m, 3m, 0.45m, 2.89m }, { 10m, 4m, 0.38m, 9.37m }, { 8m, 2m, 0.55m, 5.22m } };  //варианты колличества
+        decimal[,] counts = new decimal[4, 4] { { 1m, 5m, 0.17m, 1.73m }, { 7m, 3m, 0.44m, 2.89m }, { 10m, 4m, 0.38m, 9.37m }, { 8m, 2m, 0.55m, 5.22m } };  //варианты колличества
         Random random = new Random();
         List<TestDataReceipt> testDataReceiptList = new List<TestDataReceipt>();
         List<TestDataCorrection> testDataCorrectionList = new List<TestDataCorrection>();
@@ -255,7 +255,8 @@ namespace FW16AutoTestUtility
                             }
                         }
                     }
-
+                    decimal sumCorr = itemBy == 1 ? ((document.Total * 100) % 100)/100m : 0.99m - ((document.Total * 100) % 100) / 100m;
+                    testingInterfaceFW16.SetAdjustment(document,TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
                     decimal sum = 0m;
                     for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                           //перебор видов платежей
                     {
