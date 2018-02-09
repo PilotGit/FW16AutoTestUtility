@@ -624,16 +624,15 @@ namespace FW16AutoTestUtility
                 Log($"\t\t\tТовар добавлен\n" +
                     $"\t\t\t {code,15}|{name,12}|{itemBy,6}|{paymentKind,17}|{count,7}|{money,8}|{vatCode,15}");
 
-                registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10 + TestingInterfaceFW16.vatCode.IndexOf(vatCode) - 1 + 120] += receiptEntry.Cost;              //добаление в регистр (120-125,130-135,140-145,150-155) суммы по ставке НДС
-                if (TestingInterfaceFW16.vatCode.IndexOf(vatCode) != 3 && TestingInterfaceFW16.vatCode.IndexOf(vatCode) != 4)                                                               //проверка на нулевые ставки НДС
+                registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10 + TestingInterfaceFW16.vatCode.IndexOf(vatCode) - 1 + 120] += receiptEntry.Cost;                  //добаление в регистр (120-125,130-135,140-145,150-155) суммы по ставке НДС
+                if (TestingInterfaceFW16.vatCode.IndexOf(vatCode) != 3 && TestingInterfaceFW16.vatCode.IndexOf(vatCode) != 4)                                                                   //проверка на нулевые ставки НДС
                     registersTmp[(TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10 + (TestingInterfaceFW16.vatCode.IndexOf(vatCode) > 4 ? TestingInterfaceFW16.vatCode.IndexOf(vatCode) - 2 : TestingInterfaceFW16.vatCode.IndexOf(vatCode)) + 120 + 5] += receiptEntry.VatAmount;   //добавление в регистр (126-129,136-139,146-149,156-159) суммы НДС 
                 registersTmp[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 10 + TestingInterfaceFW16.itemPaymentKind.IndexOf(paymentKind) + 190] += receiptEntry.Cost;                //добавление в регистр (20-206, 210-216, 220-226, 230-236) суммы по способу рассчёта 
 
-                registersTmp[160] += receiptEntry.Cost;                                                                                     //добавление в регистр (160) суммы открытого документа
-                registersTmp[TestingInterfaceFW16.vatCode.IndexOf(vatCode) + 160] += receiptEntry.Cost;                                                             //добавление в регситр (161-166) сумма открытого документа по ставкам НДС
+                registersTmp[TestingInterfaceFW16.vatCode.IndexOf(vatCode) + 160] += receiptEntry.Cost;                                                                                         //добавление в регситр (161-166) сумма открытого документа по ставкам НДС
                 if (TestingInterfaceFW16.vatCode.IndexOf(vatCode) != 3 && TestingInterfaceFW16.vatCode.IndexOf(vatCode) != 4)
-                    registersTmp[(TestingInterfaceFW16.vatCode.IndexOf(vatCode) > 4 ? TestingInterfaceFW16.vatCode.IndexOf(vatCode) - 2 : TestingInterfaceFW16.vatCode.IndexOf(vatCode)) + 160 + 6] += receiptEntry.VatAmount;                                              //добавление в регситр (167-170) суммы НДС открытого документа 
-                registersTmp[171]++;                                                                                                        //Добавление в регситр (171)  количество товарных позиций
+                    registersTmp[(TestingInterfaceFW16.vatCode.IndexOf(vatCode) > 4 ? TestingInterfaceFW16.vatCode.IndexOf(vatCode) - 2 : TestingInterfaceFW16.vatCode.IndexOf(vatCode)) + 160 + 6] += receiptEntry.VatAmount;      //добавление в регситр (167-170) суммы НДС открытого документа 
+                registersTmp[171]++;                                                                                                                                                            //Добавление в регситр (171)  количество товарных позиций
             }
             catch (Exception ex)
             {
@@ -673,6 +672,8 @@ namespace FW16AutoTestUtility
                 registersTmp[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind)] += sum;                                                                                                                         //добавление в регистры (1-4) суммы по типу операции
                 registersTmp[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 10 + 1 + (int)tenderCode] += sum;                                                                                              //добавление в регистры (11-18, 21-28, 31-38, 41-48) суммы по номеру платежа
                 if (TestingInterfaceFW16.tenderCodeType[tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash)) registersTmp[TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 10 + 1 + 8] += sum;             //добавление в регистры (19, 29, 39, 49) суммы электрооного типа платежа
+
+                registersTmp[160] += sum;                                                                                                                                                   //добавление в регистр (160) суммы открытого документа
 
                 registersTmp[(int)tenderCode + 172] += sum;                                                                                                                                 //добавление в регистры (172-179) суммы открытого документа по номеру платежа
                 switch (TestingInterfaceFW16.tenderCodeType[tenderCode])

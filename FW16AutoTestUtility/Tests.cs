@@ -115,7 +115,7 @@ namespace FW16AutoTestUtility
                 {
                     for (int cost = 0; cost < TestingInterfaceFW16.countcosts; cost++)                                         //
                     {
-                        testingInterfaceFW16.AddTender(document, TestingInterfaceFW16.nfDocType[nfDocType], (Native.CmdExecutor.TenderCode)tenderCode, costs[nfDocType-1,cost]);
+                        testingInterfaceFW16.AddTender(document, TestingInterfaceFW16.nfDocType[nfDocType], (Native.CmdExecutor.TenderCode)tenderCode, costs[nfDocType - 1, cost]);
                     }
                 }
                 document.PrintText("Тестовый текст теста текстовго нефиксального документа");
@@ -139,7 +139,7 @@ namespace FW16AutoTestUtility
                 testingInterfaceFW16.StartDocument(out Fw16.Ecr.NonFiscalBase document, TestingInterfaceFW16.nfDocType[testData.nfDocType]);
                 for (int cost = 0; cost < TestingInterfaceFW16.countcosts; cost++)
                 {
-                    testingInterfaceFW16.AddTender(document, TestingInterfaceFW16.nfDocType[testData.nfDocType], (Native.CmdExecutor.TenderCode)(testData.tenderCode), costs[testData.nfDocType-1,cost]);
+                    testingInterfaceFW16.AddTender(document, TestingInterfaceFW16.nfDocType[testData.nfDocType], (Native.CmdExecutor.TenderCode)(testData.tenderCode), costs[testData.nfDocType - 1, cost]);
                 }
 
                 document.PrintText("Тестовый текст теста текстовго нефиксального документа");
@@ -163,7 +163,7 @@ namespace FW16AutoTestUtility
         {
             string ret = "";
             int i = 1;
-            int countCorrections = TestingInterfaceFW16.countReceiptKind/2;
+            int countCorrections = TestingInterfaceFW16.countReceiptKind / 2;
 
             for (int receiptKind = 1; receiptKind < 4; receiptKind += 2)
             {
@@ -173,8 +173,8 @@ namespace FW16AutoTestUtility
                 {
                     for (int cost = 0; cost < TestingInterfaceFW16.countcosts; cost++)                                  //перебор сумм
                     {
-                        testingInterfaceFW16.AddTender(document, TestingInterfaceFW16.receiptKind[receiptKind], (Native.CmdExecutor.TenderCode)tenderCode, costs[receiptKind - 1,cost]);
-                        sum += costs[receiptKind-1,cost];
+                        testingInterfaceFW16.AddTender(document, TestingInterfaceFW16.receiptKind[receiptKind], (Native.CmdExecutor.TenderCode)tenderCode, costs[receiptKind - 1, cost]);
+                        sum += costs[receiptKind - 1, cost];
                     }
                 }
                 decimal sumPaid = 0m;
@@ -191,7 +191,7 @@ namespace FW16AutoTestUtility
             }
             return ret;
         }
-        
+
         /// <summary>
         /// Тестирует чек коррекции с использованием заранее сформирванных тестовых данных
         /// </summary>
@@ -207,8 +207,8 @@ namespace FW16AutoTestUtility
                 decimal sum = 0;
                 for (int cost = 0; cost < TestingInterfaceFW16.countcosts; cost++)                                  //перебор сумм
                 {
-                    testingInterfaceFW16.AddTender(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], (Native.CmdExecutor.TenderCode)testData.tenderCode, costs[testData.receiptKind-1,cost]);
-                    sum += costs[testData.receiptKind-1,cost];
+                    testingInterfaceFW16.AddTender(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], (Native.CmdExecutor.TenderCode)testData.tenderCode, costs[testData.receiptKind - 1, cost]);
+                    sum += costs[testData.receiptKind - 1, cost];
                 }
                 testingInterfaceFW16.AddAmount(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], TestingInterfaceFW16.vatCodeCorr[testData.vatCode], sum);
 
@@ -247,25 +247,25 @@ namespace FW16AutoTestUtility
                                 testingInterfaceFW16.AddEntry(document,
                                     TestingInterfaceFW16.receiptKind[receiptKind],
                                     "Item " + vatCode + "" + itemBy + "" + itemPaymentKind + "" + item,
-                                    counts[receiptKind-1,item / TestingInterfaceFW16.countcosts % TestingInterfaceFW16.countCounts],
+                                    counts[receiptKind - 1, item / TestingInterfaceFW16.countcosts % TestingInterfaceFW16.countCounts],
                                     TestingInterfaceFW16.vatCode[vatCode],
                                     (TestingInterfaceFW16.ItemBy)itemBy,
-                                    costs[receiptKind-1,item % TestingInterfaceFW16.countcosts],
+                                    costs[receiptKind - 1, item % TestingInterfaceFW16.countcosts],
                                     TestingInterfaceFW16.itemPaymentKind[itemPaymentKind]);  //создание товара
                             }
                         }
                     }
-                    decimal sumCorr = itemBy == 1 ? ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100)/100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
-                    testingInterfaceFW16.SetAdjustment(document,TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
+                    decimal sumCorr = itemBy == 1 ? ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
+                    testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
                     decimal sum = 0m;
                     decimal totalaPaid = 0;
                     for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                           //перебор видов платежей
                     {
-                        totalaPaid+= sum = Math.Round(testingInterfaceFW16.RegistersTmp[160] / 9 - tenderCode, 2);
+                        totalaPaid += sum = Math.Round(testingInterfaceFW16.RegistersTmp[160] / 9 - tenderCode, 2);
                         testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[receiptKind], (Native.CmdExecutor.TenderCode)tenderCode, sum);
-                        sum = testingInterfaceFW16.RegistersTmp[160] - totalaPaid;
                     }
 
+                    sum = testingInterfaceFW16.RegistersTmp[160] - totalaPaid;
                     testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[receiptKind], Native.CmdExecutor.TenderCode.Cash, sum + (random.Next(0, (int)(sum * (10m / 100m)))));       //оплата наличными
                     Console.Write($"({i++}/{countReciepts}) ");
                     ret += testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.receiptKind[receiptKind], abort);
@@ -273,7 +273,7 @@ namespace FW16AutoTestUtility
             }
             return ret;
         }
-       
+
         /// <summary>
         /// Тестирует чек с использованием заранее сформирванных тестовых данных
         /// </summary>
@@ -290,7 +290,7 @@ namespace FW16AutoTestUtility
                     testingInterfaceFW16.AddEntry(document,
                         TestingInterfaceFW16.receiptKind[testData.receiptKind],
                         "Item " + testData.vatCode + "" + testData.itemBy + "" + testData.itemPaymentKind + "" + item,
-                        counts[testData.receiptKind-1,item / TestingInterfaceFW16.countcosts % TestingInterfaceFW16.countCounts],
+                        counts[testData.receiptKind - 1, item / TestingInterfaceFW16.countcosts % TestingInterfaceFW16.countCounts],
                         TestingInterfaceFW16.vatCode[testData.vatCode],
                         (TestingInterfaceFW16.ItemBy)testData.itemBy,
                         costs[testData.receiptKind - 1, item % TestingInterfaceFW16.countcosts],
@@ -369,7 +369,7 @@ namespace FW16AutoTestUtility
                             {
                                 listNFDocTmp.Add(new TestDataNFDoc(nfDocType, tenderCode));                                                                                                                             //добавление тестовых данных для нефискального документа
                             }
-                                                    }
+                        }
                     }
                     continue;
                 }
