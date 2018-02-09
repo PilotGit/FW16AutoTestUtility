@@ -817,7 +817,6 @@ namespace FW16AutoTestUtility
             Log($"Запрошеные данные с регистров с {startIndex} по {endIndex} {((err.Length > 310) ? "\n" + err : "")}");           //логирование
             if (err.Length > 310)
             {
-                GetRegisters();
                 return 1;
             }
             return 0;
@@ -867,7 +866,6 @@ namespace FW16AutoTestUtility
             }
             Console.Write(((err.Length > 310) ? err : ""));                                         //логирование
             Log($"Запрошеные данные с регистров{((err.Length > 310) ? "\n" + err : "")}");          //логирование
-            if (errRegisters.Length > 0) GetRegisters();
             return errRegisters;
         }
 
