@@ -149,7 +149,7 @@ namespace FW16AutoTestUtility
                 if (testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.nfDocType[testData.nfDocType], abort).Length != 0)
                 {
                     err += testData.ToString();
-                    testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
+                    //testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
                 }
             }
             return err;
@@ -217,7 +217,7 @@ namespace FW16AutoTestUtility
                 if (testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], abort).Length != 0)
                 {
                     err += testData.ToString();
-                    testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
+                    //testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
                 }
             }
             return err;
@@ -302,7 +302,7 @@ namespace FW16AutoTestUtility
                 if (testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], false).Length != 0)
                 {
                     err += testData.ToString();
-                    testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
+                    //testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
                 }
             }
             return err;

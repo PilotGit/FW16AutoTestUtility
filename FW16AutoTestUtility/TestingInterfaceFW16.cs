@@ -400,7 +400,7 @@ namespace FW16AutoTestUtility
                 }
             }
             //return RequestRegisters(111, 120);
-            return RequestRegisters(this.registers, RegistersNFDoc);
+            return RequestRegisters(this.registers, RegistersСumulative);
 
         }
 
@@ -560,7 +560,7 @@ namespace FW16AutoTestUtility
                 }
             }
             //return RequestRegisters(111, 120);
-            return RequestRegisters(this.registers, RegistersCorrection);
+            return RequestRegisters(this.registers, RegistersСumulative);
         }
 
         /// <summary>
@@ -769,7 +769,7 @@ namespace FW16AutoTestUtility
                     document = null;
                 }
             }
-            return RequestRegisters(this.registers, RegistersReciept);
+            return RequestRegisters(this.registers, RegistersСumulative);
         }
 
         /// <summary>
@@ -803,6 +803,7 @@ namespace FW16AutoTestUtility
                                 err += $"|{"",7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{"",18:F}|{"",19:F}|\n";         //Вывод последующих строк описания, если необходимо
                             }
                         }
+                        registers[i] = tmp;
                     }
                     catch (Exception ex)
                     {
@@ -825,18 +826,20 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Сравнение значени программных регистров с значениями регистров ККТ
         /// </summary>
-        /// <param name="arr">Массив номеров сравниваемых регистров</param>
+        /// <param name="arr">Массив номеров исключаемых регистров</param>
         /// <returns></returns>
         public string RequestRegisters(decimal[] testRegisters, int[] arr)
         {
+            ushort endIndex = countRegisters;
+            ushort startIndex = 1;
             string errRegisters = "";
             string err = $"Error!\n" +
                          $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
                          $"|   #   |{"discription",lenStringDiscription}|       test       |        ККТ        |\n" +
                          $"+-------+--------------------------------------------------+------------------+-------------------+\n";                                                                                          //строка ошибки заполняемая при несоответсвии регистров
-            foreach (ushort i in arr)
+            for (ushort i = startIndex; i <= endIndex; i++)
             {
-                if (inaccessibleRegisters.IndexOf(i) == -1)
+                if (inaccessibleRegisters.IndexOf(i) == -1 && Array.IndexOf(arr, i) == -1)
                 {
                     try
                     {
@@ -851,6 +854,7 @@ namespace FW16AutoTestUtility
                             {
                                 err += $"|{"",7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{"",18:F}|{"",19:F}|\n";         //Вывод последующих строк описания, если необходимо
                             }
+                            registers[i] = tmp;
                         }
                     }
                     catch (Exception ex)
