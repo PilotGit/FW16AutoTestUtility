@@ -20,6 +20,9 @@ namespace FW16AutoTestUtility
         List<TestDataCorrection> testDataCorrectionList = new List<TestDataCorrection>();
         List<TestDataNFDoc> testDataNFDocList = new List<TestDataNFDoc>();
 
+        /// <summary>
+        /// Создаёт объект класса с значением параметров по умолчанию
+        /// </summary>
         public Tests()
         {
             testingInterfaceFW16 = new TestingInterfaceFW16(out ecrCtrl);
@@ -33,6 +36,11 @@ namespace FW16AutoTestUtility
             }
         }
 
+        /// <summary>
+        /// Создаёт объект класса исходя из переданных параметров
+        /// </summary>
+        /// <param name="serialPort">Число, означающее порт</param>
+        /// <param name="baudRate">Число, частота</param>
         public Tests(int serialPort, int baudRate = 57600)
         {
             testingInterfaceFW16 = new TestingInterfaceFW16(out ecrCtrl, serialPort, baudRate);
@@ -70,8 +78,11 @@ namespace FW16AutoTestUtility
                 testingInterfaceFW16.CloseShift(nameOperator);                                                                   //закрыть смену если открыта
             }
         }
-
-        public void SimpleTest()                            //функция прогона по всем видам чеков и чеков коррекции
+        
+        /// <summary>
+        /// Тестирует все виды документов, в случае обнаружения ошибок тестирует на минимальных данных
+        /// </summary>
+        public void SimpleTest()
         {
             testingInterfaceFW16.OpenShift(nameOperator);   //открытие смены для этого теста
             testingInterfaceFW16.GetRegisters();
@@ -126,6 +137,7 @@ namespace FW16AutoTestUtility
             }
             return ret;
         }
+
         /// <summary>
         /// Тестирует нефискальный документ с использованием заранее сформирванных тестовых данных
         /// </summary>
@@ -308,6 +320,10 @@ namespace FW16AutoTestUtility
             return err;
         }
 
+        /// <summary>
+        /// Формирует набор данных тестирования нефискального документа исходя из полученных номеров регистров
+        /// </summary>
+        /// <param name="registers">Строка, с номерами регистров, разделённых , </param>
         public void CreateNFDocDataCollection(string registers)
         {
             List<string> regList = new List<string>(registers.Split(','));                      //Разделяет строку на подстроки
@@ -381,6 +397,10 @@ namespace FW16AutoTestUtility
 
         }
 
+        /// <summary>
+        /// Формирует набор данных тестирования чека коррекции исходя из полученных номеров регистров
+        /// </summary>
+        /// <param name="registers">Строка, с номерами регистров, разделённых , </param>
         public void CreateCorrectionDataCollection(string registers)
         {
             List<string> regList = new List<string>(registers.Split(','));                      //Разделяет строку на подстроки    
@@ -489,7 +509,7 @@ namespace FW16AutoTestUtility
         }
 
         /// <summary>
-        /// Формирует набор данных тестирования исходя из полученных номеров регистров
+        /// Формирует набор данных тестирования чека исходя из полученных номеров регистров
         /// </summary>
         /// <param name="registers">Строка, с номерами регистров, разделённых , </param>
         public void CreateReceiptDataCollection(string registers)
@@ -777,7 +797,9 @@ namespace FW16AutoTestUtility
         }
     }
 
-
+    /// <summary>
+    /// Класс, хранящий набор тестовых данных для чека
+    /// </summary>
     class TestDataReceipt
     {
         public int receiptKind;
@@ -785,11 +807,6 @@ namespace FW16AutoTestUtility
         public int itemPaymentKind;
         public int itemBy;
         public int tenderCode;
-
-        public override string ToString()
-        {
-            return $"|{TestingInterfaceFW16.receiptKind[receiptKind],12}|{TestingInterfaceFW16.vatCode[vatCode],17}|{TestingInterfaceFW16.itemPaymentKind[itemPaymentKind],17}|{(TestingInterfaceFW16.ItemBy)itemBy,8}|{tenderCode,15}|{TestingInterfaceFW16.tenderType[TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode]],15}|\n";
-        }
 
         public TestDataReceipt(int receiptKind, int vatCode, int itemPaymentKind, int itemBy, int tenderCode)
         {
@@ -821,8 +838,16 @@ namespace FW16AutoTestUtility
             hashCode = hashCode * -1521134295 + tenderCode.GetHashCode();
             return hashCode;
         }
+
+        public override string ToString()
+        {
+            return $"|{TestingInterfaceFW16.receiptKind[receiptKind],12}|{TestingInterfaceFW16.vatCode[vatCode],17}|{TestingInterfaceFW16.itemPaymentKind[itemPaymentKind],17}|{(TestingInterfaceFW16.ItemBy)itemBy,8}|{tenderCode,15}|{TestingInterfaceFW16.tenderType[TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode]],15}|\n";
+        }
     }
 
+    /// <summary>
+    /// Класс, хранящий набор тестовых данных для чека коррекции
+    /// </summary>
     class TestDataCorrection
     {
         public int receiptKind;
@@ -860,6 +885,9 @@ namespace FW16AutoTestUtility
         }
     }
 
+    /// <summary>
+    /// Класс, хранящий набор тестовых данных для нефискального документа
+    /// </summary>
     class TestDataNFDoc
     {
         public int nfDocType;
