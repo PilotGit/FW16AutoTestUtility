@@ -10,14 +10,35 @@ namespace FW16AutoTestUtility
 {
     class Tests
     {
+        /// <summary>
+        /// Интерфейс взаимодействия с длл, отслеживающий изменение в регистрах
+        /// </summary>
         TestingInterfaceFW16 testingInterfaceFW16 = null;
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
+        /// <summary>
+        /// Имя кассира
+        /// </summary>
         string nameOperator = "test program";                        //имя касира 
-        decimal[,] costs = new decimal[,] { { 217m, 193.7m }, { 30m, 18.36m }, { 147m, 5.63m }, { 961m, 101.25m } };          //варианты цен
-        decimal[,] counts = new decimal[4, 4] { { 1m, 5m, 0.17m, 1.73m }, { 7m, 3m, 0.44m, 2.89m }, { 10m, 4m, 0.38m, 9.37m }, { 8m, 2m, 0.55m, 5.22m } };  //варианты колличества
+        /// <summary>
+        /// Варианты сумм
+        /// </summary>
+        decimal[,] costs = new decimal[,] { { 217m, 193.7m }, { 30m, 18.36m }, { 147m, 5.63m }, { 961m, 101.25m } };         
+        /// <summary>
+        /// Варианты количеств
+        /// </summary>
+        decimal[,] counts = new decimal[4, 4] { { 1m, 5m, 0.17m, 1.73m }, { 7m, 3m, 0.44m, 2.89m }, { 10m, 4m, 0.38m, 9.37m }, { 8m, 2m, 0.55m, 5.22m } }; 
         Random random = new Random();
+        /// <summary>
+        /// Список тестовых данных для чека
+        /// </summary>
         List<TestDataReceipt> testDataReceiptList = new List<TestDataReceipt>();
+        /// <summary>
+        /// Список тестовых данных для чека коррекции
+        /// </summary>
         List<TestDataCorrection> testDataCorrectionList = new List<TestDataCorrection>();
+        /// <summary>
+        /// Список тестовых данных для нефискального документа
+        /// </summary>
         List<TestDataNFDoc> testDataNFDocList = new List<TestDataNFDoc>();
 
         /// <summary>
@@ -528,9 +549,9 @@ namespace FW16AutoTestUtility
                 int receiptKind;                            //Тип чека
                 int vatCode;                                //Ставка НДС
                 int itemPaymentKind;                        //Тип оплаты товара
-                int adjustment;                                 //Добавление товара по
+                int adjustment;                             //Добавление товара по
                 int tenderCode;                             //Номер платежа
-                int numberRegister = Int32.Parse(item);
+                int numberRegister = Int32.Parse(item);     //Номер регистра
                 if (numberRegister > 0 && numberRegister < 5)                                                                                                                                                           //Создаёт тестовые данные для проврки ошибки в 1-4 регистрах
                 {
                     receiptKind = numberRegister;
@@ -822,11 +843,29 @@ namespace FW16AutoTestUtility
     /// </summary>
     class TestDataReceipt
     {
+        /// <summary>
+        /// Номер типа чека коррекции
+        /// </summary>
         public int receiptKind;
+        /// <summary>
+        /// Номер процентной ставки
+        /// </summary>
         public int vatCode;
+        /// <summary>
+        /// Номер типа оплаты товара
+        /// </summary>
         public int itemPaymentKind;
+        /// <summary>
+        /// Номер типа добавления товара
+        /// </summary>
         public int itemBy;
+        /// <summary>
+        /// Номер платежа
+        /// </summary>
         public int tenderCode;
+        /// <summary>
+        /// Номер типа коррекции суммы
+        /// </summary>
         public int adjustment;
 
         public TestDataReceipt(int receiptKind, int vatCode, int itemPaymentKind, int adjustment, int tenderCode, int itemBy = 0)
@@ -874,8 +913,17 @@ namespace FW16AutoTestUtility
     /// </summary>
     class TestDataCorrection
     {
+        /// <summary>
+        /// Номер типа чека коррекции
+        /// </summary>
         public int receiptKind;
+        /// <summary>
+        /// Номер процентной ставки
+        /// </summary>
         public int vatCode;
+        /// <summary>
+        /// Номер платежа
+        /// </summary>
         public int tenderCode;
 
         public override string ToString()
@@ -914,7 +962,13 @@ namespace FW16AutoTestUtility
     /// </summary>
     class TestDataNFDoc
     {
+        /// <summary>
+        /// номер типа нефискального документа
+        /// </summary>
         public int nfDocType;
+        /// <summary>
+        /// номер платежа
+        /// </summary>
         public int tenderCode;
 
         public override string ToString()
