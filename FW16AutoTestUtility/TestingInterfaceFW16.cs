@@ -346,6 +346,7 @@ namespace FW16AutoTestUtility
                     $"\t Exception={ex.Message}");
             }
             SetValue(registers, 0, 160, 182);
+            SetValue(controlRegisters, 0, 160, 182);
         }
 
         /// <summary>
