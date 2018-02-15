@@ -48,6 +48,10 @@ namespace FW16AutoTestUtility
         /// </summary>
         public const int countItemBy = 2;
         /// <summary>
+        /// Количество типов коррекции суммы
+        /// </summary>
+        public const int countAdjustment = 2;
+        /// <summary>
         /// Длинна описания регистра или счётчика
         /// </summary>
         public const int lenStringDiscription = 50;
@@ -629,8 +633,16 @@ namespace FW16AutoTestUtility
             try
             {
                 ReceiptEntry receiptEntry;                                                                                                  //товар
-                if (itemBy == ItemBy.cost) receiptEntry = document.NewItemCosted(code, name, count, vatCode, sum);                        //создание по стоимости
-                else receiptEntry = document.NewItemPriced(code, name, vatCode, sum, count);                                              //создание по цене
+                switch (itemBy)
+                {
+                    case ItemBy.price:receiptEntry = document.NewItemPriced(code, name, vatCode, sum, count);                               //создание по цене
+                        break;
+                    case ItemBy.cost:receiptEntry = document.NewItemCosted(code, name, count, vatCode, sum);                                //создание по стоимости
+                        break;
+                    default:
+                        receiptEntry = null;
+                        break;
+                }
                 if (ecrCtrl.Info.FfdVersion >= 2)
                 {
                     receiptEntry.PaymentKind = itemPaymentKind;                                                                                 //спооб рассчёта
