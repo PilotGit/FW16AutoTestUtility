@@ -287,7 +287,7 @@ namespace FW16AutoTestUtility
                             }
                         }
                     }
-                    decimal sumCorr = adjustment == 1 ? ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
+                    decimal sumCorr = adjustment == 0 ? -1*((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
                     testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
                     decimal sum = 0m;
                     decimal totalaPaid = 0;
@@ -329,7 +329,7 @@ namespace FW16AutoTestUtility
                         TestingInterfaceFW16.itemPaymentKind[testData.itemPaymentKind]);  //создание товара
                 }
 
-                decimal sumCorr = testData.adjustment == 1 ? ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
+                decimal sumCorr = testData.adjustment == 0 ? -1 * ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
                 testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], sumCorr);
 
                 testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], (Native.CmdExecutor.TenderCode)testData.tenderCode, testingInterfaceFW16.RegistersTmp[160] + ((Native.CmdExecutor.TenderCode)testData.tenderCode == Native.CmdExecutor.TenderCode.Cash ? (random.Next(0, (int)(testingInterfaceFW16.RegistersTmp[160] * (10m / 100m)))) : 0));
