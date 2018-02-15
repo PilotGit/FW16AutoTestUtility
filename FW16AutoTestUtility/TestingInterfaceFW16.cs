@@ -166,7 +166,7 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Соответствие типа оплаты товара его номеру
         /// </summary>
-        public static readonly List<ItemPaymentKind> itemPaymentKind = new List<ItemPaymentKind> { 0, ItemPaymentKind.Prepay, ItemPaymentKind.PartlyPrepay, ItemPaymentKind.Advance, ItemPaymentKind.Payoff, ItemPaymentKind.PartlyLoanCredit, ItemPaymentKind.LoanCredit, ItemPaymentKind.PayCredit, };
+        public static readonly List<ItemPaymentKind> itemPaymentKind = new List<ItemPaymentKind> { 0, ItemPaymentKind.Prepay, ItemPaymentKind.PartlyPrepay, ItemPaymentKind.Advance, ItemPaymentKind.Payoff, ItemPaymentKind.PartlyLoanCredit, ItemPaymentKind.LoanCredit, ItemPaymentKind.PayCredit };
 
         /// <summary>
         /// Соответствие типа чека его номеру
@@ -838,10 +838,10 @@ namespace FW16AutoTestUtility
                 document.SetAdjustment(sum, description);
                 Log($"\t\t\tДобавлена коррекция суммы.\n" +
                     $"\t\t\t {description,8}|{sum,8}\n");
-
-                registersTmp[180 + TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 2 + (int)adjustmentType] += sum;
-
-                registersTmp[160] += sum;
+                /*регистры*/
+                registersTmp[180 + TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) * 2 + (int)adjustmentType] += Math.Abs(sum);   //Добавление в регистры (182-189) суммы коррекции суммы
+                /*регистры открытого документа*/
+                registersTmp[160] += sum;                                           //Добавление в регистр (160) коррекции суммы
             }
             catch (Exception ex)
             {
