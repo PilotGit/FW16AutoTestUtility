@@ -26,7 +26,7 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Количество типов оплаты
         /// </summary>
-        public const int countItemPaymentKind = 7;
+        public const int countItemPaymentKind = 6;  //на самом деле 7, но 7й выдаёт ошибку.
         /// <summary>
         /// Количество типов чеков
         /// </summary>
@@ -70,40 +70,88 @@ namespace FW16AutoTestUtility
         private readonly int[] registersCorrection = { 5, 7, 51, 52, 53, 54, 55, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71, 72, 73, 74, 75, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 111, 112, 113, 114, 115, 116, 117, 118, 119, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181 };
         private readonly int[] registersNFDoc = { 9, 10, 91, 92, 93, 94, 95, 96, 97, 98, 99, 101, 102, 103, 104, 105, 106, 107, 108, 109, 111, 112, 113, 114, 115, 116, 117, 118, 119 };
         private readonly int[] registersСumulative = { 191, 192, 193, 194, 195, 196, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 270, 271, 272, 273, 274, 275, 276, 280, 281, 282, 283, 284, 285, 286, 290, 291, 292, 293, 294, 295, 296 };
-        private readonly int[] registersOopenReciept = { 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181 };
+        private readonly int[] registersOpenReciept = { 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181 };
 
+        /// <summary>
+        /// регистры связаные с кассовым чеком
+        /// </summary>
         public int[] RegistersReciept { get => registersReciept; }
+        /// <summary>
+        /// регистры связанные с чеком коррекции
+        /// </summary>
         public int[] RegistersCorrection { get => registersCorrection; }
+        /// <summary>
+        /// регистры связанные с нефискальным документом
+        /// </summary>
         public int[] RegistersNFDoc { get => registersNFDoc; }
+        /// <summary>
+        /// накопительные регистры
+        /// </summary>
         public int[] RegistersСumulative { get => registersСumulative; }
-        public int[] RegistersOopenReciept { get => registersOopenReciept; }
+        /// <summary>
+        /// регистры открытого документа
+        /// </summary>
+        public int[] RegistersOpenReciept { get => registersOpenReciept; }
 
+        /// <summary>
+        /// Массив, хранящий данные последнего документа
+        /// </summary>
         public decimal[] RegistersTmp { get => registersTmp; }
+        /// <summary>
+        /// Массив, хранящий данные последней смены 
+        /// </summary>
         public decimal[] ControlRegisters { get => controlRegisters; }
+        /// <summary>
+        /// Массив, хранящий данные последней смены 
+        /// </summary>
+        decimal[] controlRegisters = new decimal[countRegisters + 1];
+        /// <summary>
+        /// Массив, хранящий данные последнего документа
+        /// </summary>
+        decimal[] registersTmp = new decimal[countRegisters + 1];                   
+        /// <summary>
+        /// Массив, хранящий данные текущего состояния регситров.
+        /// </summary>
+        decimal[] registers = new decimal[countRegisters + 1];       
+        /// <summary>
+        /// Массив, хранящий текущее состояние счётчиков
+        /// </summary>
+        int[] counters = new int[countCounters + 1]; 
+        /// <summary>
+        /// Список регистров недоступных при первом считовании
+        /// </summary>
+        public List<int> inaccessibleRegisters = new List<int>();         
 
         readonly EcrCtrl ecrCtrl;
-        readonly uint versionFFD = 0;                                                 //Версия ФФД
-        decimal[] controlRegisters = new decimal[countRegisters + 1];
-        decimal[] registersTmp = new decimal[countRegisters + 1];                   //массив временных регистров
-        decimal[] registers = new decimal[countRegisters + 1];               //массив регистров
-        int[] counters = new int[countCounters + 1];                         //массив счётчиков
-        public List<int> inaccessibleRegisters = new List<int>();                   //недоступные регистры
-        private Random random = new Random();
+        /// <summary>
+        /// версия ФФД
+        /// </summary>
+        readonly uint versionFFD = 0;                       
+        /// <summary>
+        /// Счётчик считывания регистров
+        /// </summary>
         public int countGetRegister = 0;
 
+        /// <summary>
+        /// Тип добавления товара
+        /// </summary>
         public enum ItemBy
         {
             price = 0,
             cost = 1
         }
-
+        /// <summary>
+        /// Тип коррекции суммы
+        /// </summary>
         public enum AdjustmentType
         {
             [Description("Скидка")]
             sale = 0,
             [Description("Наценка")]
             markup = 1
-        }
+        }      
+
+        private Random random = new Random();
 
         /// <summary>
         /// Соответствие типа НДС его номеру
@@ -297,7 +345,7 @@ namespace FW16AutoTestUtility
                 Log($"\tError! Не удалось закрыт смену.\n" +
                     $"\t Exception={ex.Message}");
             }
-
+            SetValue(registers, 0, 160, 182);
         }
 
         /// <summary>
@@ -321,6 +369,7 @@ namespace FW16AutoTestUtility
                 document = null;
             }
             SetValue(registersTmp, 0);
+            SetValue(registers, 0, 160, 182);
         }
 
         /// <summary>
@@ -440,6 +489,7 @@ namespace FW16AutoTestUtility
                 document = null;
             }
             SetValue(registersTmp, 0);
+            SetValue(registers, 0, 160, 182);
         }
 
         /// <summary>
@@ -856,7 +906,6 @@ namespace FW16AutoTestUtility
         /// <param name="endIndex">Конечный индекс, не включительно</param>
         public int RequestRegisters(decimal[] testRegisters)
         {
-            //endIndex = endIndex > 0 ? endIndex : (ushort)(countRegisters + 1);                                                           //проверка конечного значения если 0, то до конца
             ushort startIndex = 1;
             ushort endIndex = countRegisters;
             string err = $"Error!\n" +
@@ -880,7 +929,7 @@ namespace FW16AutoTestUtility
                                 err += $"|{"",7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{"",18:F}|{"",19:F}|\n";         //Вывод последующих строк описания, если необходимо
                             }
                         }
-                        registers[i] = tmp;
+                        testRegisters[i] = tmp;
                         Log($"Программный регистр №{i,4} получил значение {registers[i]}");
                     }
                     catch (Exception ex)
@@ -931,7 +980,7 @@ namespace FW16AutoTestUtility
                             {
                                 err += $"|{"",7:D}|{discription.Substring(startPosition, Math.Min(discription.Length - startPosition, lenStringDiscription)),lenStringDiscription}|{"",18:F}|{"",19:F}|\n";         //Вывод последующих строк описания, если необходимо
                             }
-                            registers[i] = tmp;
+                            testRegisters[i] = tmp;
                             Log($"Программный регистр №{i,4} получил значение {registers[i]}");
                         }
                     }
@@ -1040,8 +1089,8 @@ namespace FW16AutoTestUtility
                 {
                     try
                     {
-                        registers[i] = ecrCtrl.Info.GetRegister(i);             //запрос значений регистров из ККТ
-                        if (countGetRegister == 0) controlRegisters[i] = registers[i];
+                        registers[i] = ecrCtrl.Info.GetRegister(i);                                 //запрос значений регистров из ККТ
+                        if (countGetRegister == 0) controlRegisters[i] = registers[i];              //присвоение значений накпоительным программным регистрам
                         Log($"Программный регистр №{i,4} получил значение {registers[i]}");
                     }
                     catch (Exception)
@@ -1089,7 +1138,7 @@ namespace FW16AutoTestUtility
             ushort startIndex = 1;
             for (int i = startIndex; i <= endIndex; i++)
             {
-                if (Array.IndexOf(RegistersOopenReciept, i) != -1)
+                if (Array.IndexOf(RegistersOpenReciept, i) != -1)
                 {
                     registers[i] = registersTmp[i];                                                        //применение временного массива к конечному
                     controlRegisters[i] = registersTmp[i];
