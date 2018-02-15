@@ -161,7 +161,6 @@ namespace FW16AutoTestUtility
                 if (testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.nfDocType[testData.nfDocType], abort).Length != 0)
                 {
                     err += testData.ToString();
-                    //testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
                 }
             }
             return err;
@@ -268,7 +267,7 @@ namespace FW16AutoTestUtility
                         }
                     }
                     decimal sumCorr = itemBy == 1 ? ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
-                    testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
+                    //testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
                     decimal sum = 0m;
                     decimal totalaPaid = 0;
                     for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                           //перебор видов платежей
