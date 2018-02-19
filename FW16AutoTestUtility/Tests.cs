@@ -10,14 +10,35 @@ namespace FW16AutoTestUtility
 {
     class Tests
     {
+        /// <summary>
+        /// Интерфейс взаимодействия с длл, отслеживающий изменение в регистрах
+        /// </summary>
         TestingInterfaceFW16 testingInterfaceFW16 = null;
         public EcrCtrl ecrCtrl;                                     //подключение к ККТ
+        /// <summary>
+        /// Имя кассира
+        /// </summary>
         string nameOperator = "test program";                        //имя касира 
-        decimal[,] costs = new decimal[,] { { 217m, 193.7m }, { 30m, 18.36m }, { 147m, 5.63m }, { 961m, 101.25m } };          //варианты цен
-        decimal[,] counts = new decimal[4, 4] { { 1m, 5m, 0.17m, 1.73m }, { 7m, 3m, 0.44m, 2.89m }, { 10m, 4m, 0.38m, 9.37m }, { 8m, 2m, 0.55m, 5.22m } };  //варианты колличества
-        Random random = new Random();
+        /// <summary>
+        /// Варианты сумм
+        /// </summary>
+        decimal[,] costs = new decimal[,] { { 217m, 193.7m }, { 30m, 18.36m }, { 147m, 5.63m }, { 961m, 101.25m } };
+        /// <summary>
+        /// Варианты количеств
+        /// </summary>
+        decimal[,] counts = new decimal[4, 4] { { 1m, 5m, 0.17m, 1.73m }, { 7m, 3m, 0.44m, 2.89m }, { 10m, 4m, 0.38m, 9.37m }, { 8m, 2m, 0.55m, 5.22m } };
+        Random random = new Random();   //рандом
+        /// <summary>
+        /// Список тестовых данных для чека
+        /// </summary>
         List<TestDataReceipt> testDataReceiptList = new List<TestDataReceipt>();
+        /// <summary>
+        /// Список тестовых данных для чека коррекции
+        /// </summary>
         List<TestDataCorrection> testDataCorrectionList = new List<TestDataCorrection>();
+        /// <summary>
+        /// Список тестовых данных для нефискального документа
+        /// </summary>
         List<TestDataNFDoc> testDataNFDocList = new List<TestDataNFDoc>();
 
         /// <summary>
@@ -78,7 +99,7 @@ namespace FW16AutoTestUtility
                 testingInterfaceFW16.CloseShift(nameOperator);                                                                   //закрыть смену если открыта
             }
         }
-        
+
         /// <summary>
         /// Тестирует все виды документов, в случае обнаружения ошибок тестирует на минимальных данных
         /// </summary>
@@ -91,6 +112,8 @@ namespace FW16AutoTestUtility
             CreateReceiptDataCollection(TestReceiptBigData());
             CreateCorrectionDataCollection(TestCorrectionBigData());
             CreateNFDocDataCollection(TestNonFiscalBigData());
+
+            TestReceiptPayCredit();
 
             TestReceiptDataCollection();
             TestCorrectionDataCollection();
@@ -161,7 +184,6 @@ namespace FW16AutoTestUtility
                 if (testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.nfDocType[testData.nfDocType], abort).Length != 0)
                 {
                     err += testData.ToString();
-                    //testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
                 }
             }
             return err;
@@ -242,12 +264,12 @@ namespace FW16AutoTestUtility
         private string TestReceiptBigData(bool abort = false)
         {
             string ret = "";
-            int countReciepts = TestingInterfaceFW16.countReceiptKind * TestingInterfaceFW16.countItemBy;
+            int countReciepts = TestingInterfaceFW16.countReceiptKind * TestingInterfaceFW16.countAdjustment;
             int i = 1;
-
+            int itemBy = 0;
             for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)                              //перебор типов чеков
             {
-                for (int itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)                                               //перебор типов добавления товара
+                for (int adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)                                               //перебор типов добавления товара
                 {
                     testingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, TestingInterfaceFW16.receiptKind[receiptKind]);
                     for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)                                      //перебор типов налоговой ставки
@@ -258,7 +280,7 @@ namespace FW16AutoTestUtility
                             {
                                 testingInterfaceFW16.AddEntry(document,
                                     TestingInterfaceFW16.receiptKind[receiptKind],
-                                    "Item " + vatCode + "" + itemBy + "" + itemPaymentKind + "" + item,
+                                    "Item " + vatCode + "" + adjustment + "" + itemPaymentKind + "" + item,
                                     counts[receiptKind - 1, item / TestingInterfaceFW16.countcosts % TestingInterfaceFW16.countCounts],
                                     TestingInterfaceFW16.vatCode[vatCode],
                                     (TestingInterfaceFW16.ItemBy)itemBy,
@@ -267,7 +289,7 @@ namespace FW16AutoTestUtility
                             }
                         }
                     }
-                    decimal sumCorr = itemBy == 1 ? ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
+                    decimal sumCorr = adjustment == 0 ? -1 * ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
                     testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
                     decimal sum = 0m;
                     decimal totalaPaid = 0;
@@ -308,16 +330,69 @@ namespace FW16AutoTestUtility
                         costs[testData.receiptKind - 1, item % TestingInterfaceFW16.countcosts],
                         TestingInterfaceFW16.itemPaymentKind[testData.itemPaymentKind]);  //создание товара
                 }
+
+                decimal sumCorr = testData.adjustment == 0 ? -1 * ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
+                testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], sumCorr);
+
                 testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], (Native.CmdExecutor.TenderCode)testData.tenderCode, testingInterfaceFW16.RegistersTmp[160] + ((Native.CmdExecutor.TenderCode)testData.tenderCode == Native.CmdExecutor.TenderCode.Cash ? (random.Next(0, (int)(testingInterfaceFW16.RegistersTmp[160] * (10m / 100m)))) : 0));
 
                 Console.Write($"({i++}/{testDataReceiptList.Count}) {testData.ToString()}");
                 if (testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.receiptKind[testData.receiptKind], false).Length != 0)
                 {
                     err += testData.ToString();
-                    //testingInterfaceFW16.GetRegisters(testingInterfaceFW16.RegistersСumulative);
                 }
             }
             return err;
+        }
+
+        /// <summary>
+        /// Тестирование чека с товаром с признаком оплаты  -  оплата кредита
+        /// </summary>
+        /// <param name="abort"></param>
+        /// <returns></returns>
+        private string TestReceiptPayCredit(bool abort = false)
+        {
+            string ret = "";
+            int countReciepts = TestingInterfaceFW16.countReceiptKind * TestingInterfaceFW16.countAdjustment * TestingInterfaceFW16.countVatCode;
+            int i = 1;
+            int itemBy = 0;
+            int itemPaymentKind = 7;   //перебор типов оплаты товара
+            int item = 7;
+            for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)                              //перебор типов чеков
+            {
+                for (int adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)                                               //перебор типов добавления товара
+                {
+                    for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)                                      //перебор типов налоговой ставки
+                    {
+
+                        testingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, TestingInterfaceFW16.receiptKind[receiptKind]);
+                        testingInterfaceFW16.AddEntry(document,
+                            TestingInterfaceFW16.receiptKind[receiptKind],
+                            "Item " + vatCode + "" + adjustment + "" + itemPaymentKind + "" + item,
+                            counts[receiptKind - 1, item / TestingInterfaceFW16.countcosts % TestingInterfaceFW16.countCounts],
+                            TestingInterfaceFW16.vatCode[vatCode],
+                            (TestingInterfaceFW16.ItemBy)itemBy,
+                            costs[receiptKind - 1, item % TestingInterfaceFW16.countcosts],
+                            TestingInterfaceFW16.itemPaymentKind[itemPaymentKind]);  //создание товара
+
+                        decimal sumCorr = adjustment == 0 ? -1 * ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
+                        testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
+                        decimal sum = 0m;
+                        decimal totalaPaid = 0;
+                        for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                           //перебор видов платежей
+                        {
+                            totalaPaid += sum = Math.Round(testingInterfaceFW16.RegistersTmp[160] / 9 - tenderCode, 2);
+                            testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[receiptKind], (Native.CmdExecutor.TenderCode)tenderCode, sum);
+                        }
+
+                        sum = testingInterfaceFW16.RegistersTmp[160] - totalaPaid;
+                        testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[receiptKind], Native.CmdExecutor.TenderCode.Cash, sum + (random.Next(0, (int)(sum * (10m / 100m)))));       //оплата наличными
+                        Console.Write($"({i++}/{countReciepts}) ");
+                        ret += testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.receiptKind[receiptKind], abort);
+                    }
+                }
+            }
+            return ret;
         }
 
         /// <summary>
@@ -526,9 +601,9 @@ namespace FW16AutoTestUtility
                 int receiptKind;                            //Тип чека
                 int vatCode;                                //Ставка НДС
                 int itemPaymentKind;                        //Тип оплаты товара
-                int itemBy;                                 //Добавление товара по
+                int adjustment;                             //Добавление товара по
                 int tenderCode;                             //Номер платежа
-                int numberRegister = Int32.Parse(item);
+                int numberRegister = Int32.Parse(item);     //Номер регистра
                 if (numberRegister > 0 && numberRegister < 5)                                                                                                                                                           //Создаёт тестовые данные для проврки ошибки в 1-4 регистрах
                 {
                     receiptKind = numberRegister;
@@ -536,11 +611,11 @@ namespace FW16AutoTestUtility
                     {
                         for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                         {
-                            for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                            for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                             {
                                 for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                                 {
-                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                                 }
                             }
                         }
@@ -555,9 +630,9 @@ namespace FW16AutoTestUtility
                     {
                         for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                         {
-                            for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                            for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                             {
-                                listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                             }
                         }
                     }
@@ -574,9 +649,9 @@ namespace FW16AutoTestUtility
                             {
                                 for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                                 {
-                                    for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                                    for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                                     {
-                                        listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                        listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                                     }
                                 }
                             }
@@ -590,11 +665,11 @@ namespace FW16AutoTestUtility
                     vatCode = numberRegister % 10 + 1;
                     for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                     {
-                        for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                        for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                         {
                             for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                             {
-                                listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                             }
                         }
                     }
@@ -615,11 +690,11 @@ namespace FW16AutoTestUtility
                     }
                     for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                     {
-                        for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                        for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                         {
                             for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                             {
-                                listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                             }
                         }
                     }
@@ -633,11 +708,11 @@ namespace FW16AutoTestUtility
                         {
                             for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                             {
-                                for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                                for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                                 {
                                     for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                                     {
-                                        listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                        listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                                     }
                                 }
                             }
@@ -652,11 +727,11 @@ namespace FW16AutoTestUtility
                     {
                         for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                         {
-                            for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                            for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                             {
                                 for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                                 {
-                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                                 }
                             }
                         }
@@ -680,11 +755,11 @@ namespace FW16AutoTestUtility
                     {
                         for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                         {
-                            for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                            for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                             {
                                 for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                                 {
-                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                                 }
                             }
                         }
@@ -700,9 +775,9 @@ namespace FW16AutoTestUtility
                         {
                             for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                             {
-                                for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                                for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                                 {
-                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                                 }
                             }
                         }
@@ -717,12 +792,12 @@ namespace FW16AutoTestUtility
                         {
                             for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                             {
-                                for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                                for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                                 {
                                     for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                                     {
-                                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.Cash) && numberRegister == 180) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
-                                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash) && numberRegister == 181) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.Cash) && numberRegister == 180) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
+                                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash) && numberRegister == 181) listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                                     }
                                 }
                             }
@@ -730,7 +805,25 @@ namespace FW16AutoTestUtility
                     }
                     continue;
                 }
-                /*182-189 пропущены*/
+                if (181 < numberRegister && numberRegister < 190)                                                                                                                                                                              //Создаёт тестовые данные для проврки ошибки в 119 регистрах
+                {
+                    adjustment = numberRegister % 2;
+                    receiptKind = (numberRegister - 180) / 2;
+                    for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
+                    {
+                        if (TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode] == TestingInterfaceFW16.tenderType.IndexOf(Native.CmdExecutor.TenderType.NonCash))
+                        {
+                            for (vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)
+                            {
+                                for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
+                                {
+                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));                                                                         //добавление тестовых данных для чека
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
                 /*191-194 не участвуют в минимальных тестах*/
                 if (199 < numberRegister && numberRegister < 207 || 209 < numberRegister && numberRegister < 217 || 219 < numberRegister && numberRegister < 227 || 229 < numberRegister && numberRegister < 237)       //Создаёт тестовые данные для проврки ошибки в 200-206, 210-216, 220-226, 230-236 регистрах
                 {
@@ -738,11 +831,11 @@ namespace FW16AutoTestUtility
                     itemPaymentKind = numberRegister % 10;
                     for (vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)
                     {
-                        for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                        for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                         {
                             for (tenderCode = 0; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)
                             {
-                                listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));
+                                listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));
                             }
                         }
                     }
@@ -757,9 +850,9 @@ namespace FW16AutoTestUtility
                         {
                             for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                             {
-                                for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                                for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                                 {
-                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));                                                                                 //добавление тестовых данных для чека
+                                    listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));                                                                                 //добавление тестовых данных для чека
                                 }
                             }
                         }
@@ -778,9 +871,9 @@ namespace FW16AutoTestUtility
                                 {
                                     for (itemPaymentKind = 1; itemPaymentKind <= TestingInterfaceFW16.countItemPaymentKind; itemPaymentKind++)
                                     {
-                                        for (itemBy = 0; itemBy < TestingInterfaceFW16.countItemBy; itemBy++)
+                                        for (adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)
                                         {
-                                            listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, itemBy, tenderCode));                                                                         //добавление тестовых данных для чека
+                                            listReceiptTmp.Add(new TestDataReceipt(receiptKind, vatCode, itemPaymentKind, adjustment, tenderCode));                                                                         //добавление тестовых данных для чека
                                         }
                                     }
                                 }
@@ -802,46 +895,68 @@ namespace FW16AutoTestUtility
     /// </summary>
     class TestDataReceipt
     {
+        /// <summary>
+        /// Номер типа чека коррекции
+        /// </summary>
         public int receiptKind;
+        /// <summary>
+        /// Номер процентной ставки
+        /// </summary>
         public int vatCode;
+        /// <summary>
+        /// Номер типа оплаты товара
+        /// </summary>
         public int itemPaymentKind;
+        /// <summary>
+        /// Номер типа добавления товара
+        /// </summary>
         public int itemBy;
+        /// <summary>
+        /// Номер платежа
+        /// </summary>
         public int tenderCode;
+        /// <summary>
+        /// Номер типа коррекции суммы
+        /// </summary>
+        public int adjustment;
 
-        public TestDataReceipt(int receiptKind, int vatCode, int itemPaymentKind, int itemBy, int tenderCode)
+        public TestDataReceipt(int receiptKind, int vatCode, int itemPaymentKind, int adjustment, int tenderCode, int itemBy = 0)
         {
             this.receiptKind = receiptKind;
             this.vatCode = vatCode;
             this.itemPaymentKind = itemPaymentKind;
             this.itemBy = itemBy;
             this.tenderCode = tenderCode;
+            this.adjustment = adjustment;
         }
 
         public override bool Equals(object obj)
         {
-            var date = obj as TestDataReceipt;
-            return date != null &&
-                   receiptKind == date.receiptKind &&
-                   vatCode == date.vatCode &&
-                   itemPaymentKind == date.itemPaymentKind &&
-                   itemBy == date.itemBy &&
-                   tenderCode == date.tenderCode;
+            var receipt = obj as TestDataReceipt;
+            return receipt != null &&
+                   receiptKind == receipt.receiptKind &&
+                   vatCode == receipt.vatCode &&
+                   itemPaymentKind == receipt.itemPaymentKind &&
+                   itemBy == receipt.itemBy &&
+                   tenderCode == receipt.tenderCode &&
+                   adjustment == receipt.adjustment;
         }
 
         public override int GetHashCode()
         {
-            var hashCode = 257427813;
+            var hashCode = 1741174571;
             hashCode = hashCode * -1521134295 + receiptKind.GetHashCode();
             hashCode = hashCode * -1521134295 + vatCode.GetHashCode();
             hashCode = hashCode * -1521134295 + itemPaymentKind.GetHashCode();
             hashCode = hashCode * -1521134295 + itemBy.GetHashCode();
             hashCode = hashCode * -1521134295 + tenderCode.GetHashCode();
+            hashCode = hashCode * -1521134295 + adjustment.GetHashCode();
             return hashCode;
         }
 
         public override string ToString()
         {
-            return $"|{TestingInterfaceFW16.receiptKind[receiptKind],12}|{TestingInterfaceFW16.vatCode[vatCode],17}|{TestingInterfaceFW16.itemPaymentKind[itemPaymentKind],17}|{(TestingInterfaceFW16.ItemBy)itemBy,8}|{tenderCode,15}|{TestingInterfaceFW16.tenderType[TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode]],15}|\n";
+            return $"|{TestingInterfaceFW16.receiptKind[receiptKind],12}|{TestingInterfaceFW16.vatCode[vatCode],17}|{TestingInterfaceFW16.itemPaymentKind[itemPaymentKind],17}|{(TestingInterfaceFW16.ItemBy)itemBy,8}|{(TestingInterfaceFW16.AdjustmentType)adjustment,5}|{tenderCode,15}|{TestingInterfaceFW16.tenderType[TestingInterfaceFW16.tenderCodeType[(Native.CmdExecutor.TenderCode)tenderCode]],15}|\n";
         }
     }
 
@@ -850,8 +965,17 @@ namespace FW16AutoTestUtility
     /// </summary>
     class TestDataCorrection
     {
+        /// <summary>
+        /// Номер типа чека коррекции
+        /// </summary>
         public int receiptKind;
+        /// <summary>
+        /// Номер процентной ставки
+        /// </summary>
         public int vatCode;
+        /// <summary>
+        /// Номер платежа
+        /// </summary>
         public int tenderCode;
 
         public override string ToString()
@@ -890,7 +1014,13 @@ namespace FW16AutoTestUtility
     /// </summary>
     class TestDataNFDoc
     {
+        /// <summary>
+        /// номер типа нефискального документа
+        /// </summary>
         public int nfDocType;
+        /// <summary>
+        /// номер платежа
+        /// </summary>
         public int tenderCode;
 
         public override string ToString()

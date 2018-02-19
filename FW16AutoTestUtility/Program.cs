@@ -10,7 +10,7 @@ namespace FW16AutoTestUtility
     {
         static void Main(string[] args)
         {
-            Console.Title = "AutoTestUtility v 0.4.0.0";
+            Console.Title = "AutoTestUtility v 0.5.0.0";
             Tests fw16;
             int serialPort;
             switch (args.Length)
@@ -33,4 +33,3 @@ namespace FW16AutoTestUtility
         }
     }
 }
-/*182-189*/
