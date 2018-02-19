@@ -54,7 +54,7 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Длинна описания регистра или счётчика
         /// </summary>
-        public const int lenStringDiscription = 50;
+        public const int lenStringDiscription = 51;
         /// <summary>
         /// Количество регистров
         /// </summary>
@@ -699,7 +699,7 @@ namespace FW16AutoTestUtility
                     receiptEntry.PaymentKind = itemPaymentKind;                                                                                 //спооб рассчёта
                     receiptEntry.Kind = kind;                                                                                               //тип добавляемого товара
                 }
-                document.AddEntry(receiptEntry);                                                                                            //добавления товара в чек
+               document.AddEntry(receiptEntry);                                                                                            //добавления товара в чек
 
                 Log($"\t\t\tТовар добавлен\n" +
                     $"\t\t\t {code,15}|{name,12}|{itemBy,6}|{itemPaymentKind,17}|{count,7}|{sum,8}|{vatCode,15}");
@@ -718,25 +718,25 @@ namespace FW16AutoTestUtility
                 switch (itemPaymentKind)
                 {
                     case ItemPaymentKind.Prepay:
-                        registersTmp[260 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += sum;                                                                                               //добавление в регистры (260,270,280,290) накопительный регистр по типу операции
+                        registersTmp[260 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += receiptEntry.Cost;                                                                                               //добавление в регистры (260,270,280,290) накопительный регистр по типу операции
                         break;
                     case ItemPaymentKind.PartlyPrepay:
-                        registersTmp[261 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += sum;                                                                                               //добавление в регистры (261,271,281,291) накопительный регистр по типу операции
+                        registersTmp[261 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += receiptEntry.Cost;                                                                                               //добавление в регистры (261,271,281,291) накопительный регистр по типу операции
                         break;
                     case ItemPaymentKind.Advance:
-                        registersTmp[262 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += sum;                                                                                               //добавление в регистры (262,272,282,292) накопительный регистр по типу операции
+                        registersTmp[262 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += receiptEntry.Cost;                                                                                               //добавление в регистры (262,272,282,292) накопительный регистр по типу операции
                         break;
                     case ItemPaymentKind.Payoff:
-                        registersTmp[263 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += sum;                                                                                               //добавление в регистры (263,273,283,293) накопительный регистр по типу операции
+                        registersTmp[263 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += receiptEntry.Cost;                                                                                               //добавление в регистры (263,273,283,293) накопительный регистр по типу операции
                         break;
                     case ItemPaymentKind.PartlyLoanCredit:
-                        registersTmp[264 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += sum;                                                                                               //добавление в регистры (264,274,284,294) накопительный регистр по типу операции
+                        registersTmp[264 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += receiptEntry.Cost;                                                                                               //добавление в регистры (264,274,284,294) накопительный регистр по типу операции
                         break;
                     case ItemPaymentKind.LoanCredit:
-                        registersTmp[265 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += sum;                                                                                               //добавление в регистры (265,275,285,295) накопительный регистр по типу операции
+                        registersTmp[265 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += receiptEntry.Cost;                                                                                               //добавление в регистры (265,275,285,295) накопительный регистр по типу операции
                         break;
                     case ItemPaymentKind.PayCredit:
-                        registersTmp[266 + ((TestingInterfaceFW16.itemPaymentKind.IndexOf(itemPaymentKind) - 1) * 10)] += sum;                                                                                               //добавление в регистры (266,276,286,296) накопительный регистр по типу операции
+                        registersTmp[266 + ((TestingInterfaceFW16.receiptKind.IndexOf(receiptKind) - 1) * 10)] += receiptEntry.Cost;                                                                                               //добавление в регистры (266,276,286,296) накопительный регистр по типу операции
                         break;
                     default:
                         break;
@@ -910,9 +910,9 @@ namespace FW16AutoTestUtility
             ushort startIndex = 1;
             ushort endIndex = countRegisters;
             string err = $"Error!\n" +
-                         $"+-------+--------------------------------------------------+------------------+-------------------+\n" +
+                         $"+-------+---------------------------------------------------+------------------+-------------------+\n" +
                          $"|   #   |{"discription",lenStringDiscription}|       test       |        ККТ        |\n" +
-                         $"+-------+--------------------------------------------------+------------------+-------------------+\n";                                       //строка ошибки заполняемая при несоответсвии регистров
+                         $"+-------+---------------------------------------------------+------------------+-------------------+\n";                                       //строка ошибки заполняемая при несоответсвии регистров
             for (ushort i = startIndex; i <= endIndex; i++)
             {
                 if (inaccessibleRegisters.IndexOf(i) == -1)
@@ -931,7 +931,7 @@ namespace FW16AutoTestUtility
                             }
                         }
                         testRegisters[i] = tmp;
-                        Log($"Программный регистр №{i,4} получил значение {registers[i]}");
+                        Log($"Программный регистр №{i,4} получил значение {testRegisters[i]}");
                     }
                     catch (Exception ex)
                     {
@@ -941,7 +941,7 @@ namespace FW16AutoTestUtility
                     }
                 }
             }
-            Console.Write(((err.Length > 310) ? err : ""));           //логирование
+            Console.Write(((err.Length > 310) ? err + "\n" : ""));           //логирование
             Log($"Запрошеные данные с регистров с {startIndex} по {endIndex} {((err.Length > 310) ? "\n" + err : "")}");           //логирование
             if (err.Length > 310)
             {
@@ -993,7 +993,7 @@ namespace FW16AutoTestUtility
                     }
                 }
             }
-            Console.Write(((err.Length > 310) ? err : ""));                                         //логирование
+            Console.Write(((err.Length > 310) ? err + "\n" : ""));                                         //логирование
             Log($"Запрошеные данные с регистров{((err.Length > 310) ? "\n" + err : "")}");          //логирование
             return errRegisters;
         }
@@ -1034,7 +1034,7 @@ namespace FW16AutoTestUtility
                     Log($"Warning! Не удалось получить доступ к счётчику №{i}");
                 }
             }
-            Console.Write(((err.Length > 310) ? err : ""));           //логирование
+            Console.Write(((err.Length > 310) ? err+"\n" : ""));           //логирование
             Log($"Запрошеные данные с счётчиков с {startIndex} по {endIndex} {((err.Length > 310) ? "\n" + err : "")}");           //логирование
         }
 
