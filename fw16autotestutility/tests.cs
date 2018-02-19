@@ -119,8 +119,8 @@ namespace FW16AutoTestUtility
             TestCorrectionDataCollection();
             TestNonFiscalDataCollection();
 
-            //TestReceiptBigData(true);                               //вызов функции тестирования чека c отменой.
-            //TestNonFiscalBigData(true);                             //вызов функции нефискального документа с отменой
+            TestReceiptBigData(true);                               //вызов функции тестирования чека c отменой.
+            TestNonFiscalBigData(true);                             //вызов функции нефискального документа с отменой
 
             testingInterfaceFW16.CloseShift(nameOperator);      //Закрытие смены для этого теста
 
