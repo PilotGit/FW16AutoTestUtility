@@ -27,7 +27,7 @@ namespace FW16AutoTestUtility
         /// Варианты количеств
         /// </summary>
         decimal[,] counts = new decimal[4, 4] { { 1m, 5m, 0.17m, 1.73m }, { 7m, 3m, 0.44m, 2.89m }, { 10m, 4m, 0.38m, 9.37m }, { 8m, 2m, 0.55m, 5.22m } };
-        Random random = new Random();
+        Random random = new Random();   //рандом
         /// <summary>
         /// Список тестовых данных для чека
         /// </summary>
