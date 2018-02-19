@@ -22,11 +22,11 @@ namespace FW16AutoTestUtility
         /// <summary>
         /// Варианты сумм
         /// </summary>
-        decimal[,] costs = new decimal[,] { { 217m, 193.7m }, { 30m, 18.36m }, { 147m, 5.63m }, { 961m, 101.25m } };         
+        decimal[,] costs = new decimal[,] { { 217m, 193.7m }, { 30m, 18.36m }, { 147m, 5.63m }, { 961m, 101.25m } };
         /// <summary>
         /// Варианты количеств
         /// </summary>
-        decimal[,] counts = new decimal[4, 4] { { 1m, 5m, 0.17m, 1.73m }, { 7m, 3m, 0.44m, 2.89m }, { 10m, 4m, 0.38m, 9.37m }, { 8m, 2m, 0.55m, 5.22m } }; 
+        decimal[,] counts = new decimal[4, 4] { { 1m, 5m, 0.17m, 1.73m }, { 7m, 3m, 0.44m, 2.89m }, { 10m, 4m, 0.38m, 9.37m }, { 8m, 2m, 0.55m, 5.22m } };
         Random random = new Random();
         /// <summary>
         /// Список тестовых данных для чека
@@ -112,6 +112,8 @@ namespace FW16AutoTestUtility
             CreateReceiptDataCollection(TestReceiptBigData());
             CreateCorrectionDataCollection(TestCorrectionBigData());
             CreateNFDocDataCollection(TestNonFiscalBigData());
+
+            TestReceiptPayCredit();
 
             TestReceiptDataCollection();
             TestCorrectionDataCollection();
@@ -262,7 +264,7 @@ namespace FW16AutoTestUtility
         private string TestReceiptBigData(bool abort = false)
         {
             string ret = "";
-            int countReciepts = TestingInterfaceFW16.countReceiptKind * TestingInterfaceFW16.countItemBy;
+            int countReciepts = TestingInterfaceFW16.countReceiptKind * TestingInterfaceFW16.countAdjustment;
             int i = 1;
             int itemBy = 0;
             for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)                              //перебор типов чеков
@@ -287,7 +289,7 @@ namespace FW16AutoTestUtility
                             }
                         }
                     }
-                    decimal sumCorr = adjustment == 0 ? -1*((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
+                    decimal sumCorr = adjustment == 0 ? -1 * ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
                     testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
                     decimal sum = 0m;
                     decimal totalaPaid = 0;
@@ -341,6 +343,58 @@ namespace FW16AutoTestUtility
                 }
             }
             return err;
+        }
+
+        /// <summary>
+        /// Тестирование чека с товаром с признаком оплаты  -  оплата кредита
+        /// </summary>
+        /// <param name="abort"></param>
+        /// <returns></returns>
+        private string TestReceiptPayCredit(bool abort = false)
+        {
+            string ret = "";
+            int countReciepts = TestingInterfaceFW16.countReceiptKind * TestingInterfaceFW16.countAdjustment * TestingInterfaceFW16.countVatCode * TestingInterfaceFW16.countItemPaymentKind * TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countcosts;
+            int i = 1;
+            int itemBy = 0;
+            int itemPaymentKind = 7;   //перебор типов оплаты товара
+            for (int receiptKind = 1; receiptKind <= TestingInterfaceFW16.countReceiptKind; receiptKind++)                              //перебор типов чеков
+            {
+                for (int adjustment = 0; adjustment < TestingInterfaceFW16.countAdjustment; adjustment++)                                               //перебор типов добавления товара
+                {
+                    for (int vatCode = 1; vatCode <= TestingInterfaceFW16.countVatCode; vatCode++)                                      //перебор типов налоговой ставки
+                    {
+                        for (int item = 0; item < (TestingInterfaceFW16.countCounts * TestingInterfaceFW16.countcosts); item++)              //перебор комбинаций стоиости и количества
+                        {
+                            testingInterfaceFW16.StartDocument(out Fw16.Ecr.Receipt document, nameOperator, TestingInterfaceFW16.receiptKind[receiptKind]);
+                            testingInterfaceFW16.AddEntry(document,
+                                TestingInterfaceFW16.receiptKind[receiptKind],
+                                "Item " + vatCode + "" + adjustment + "" + itemPaymentKind + "" + item,
+                                counts[receiptKind - 1, item / TestingInterfaceFW16.countcosts % TestingInterfaceFW16.countCounts],
+                                TestingInterfaceFW16.vatCode[vatCode],
+                                (TestingInterfaceFW16.ItemBy)itemBy,
+                                costs[receiptKind - 1, item % TestingInterfaceFW16.countcosts],
+                                TestingInterfaceFW16.itemPaymentKind[itemPaymentKind]);  //создание товара
+
+                            decimal sumCorr = adjustment == 0 ? -1 * ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m : 0.99m - ((testingInterfaceFW16.RegistersTmp[160] * 100) % 100) / 100m;
+                            testingInterfaceFW16.SetAdjustment(document, TestingInterfaceFW16.receiptKind[receiptKind], sumCorr);
+                            decimal sum = 0m;
+                            decimal totalaPaid = 0;
+                            for (int tenderCode = 1; tenderCode < TestingInterfaceFW16.countTenderCode; tenderCode++)                           //перебор видов платежей
+                            {
+                                totalaPaid += sum = Math.Round(testingInterfaceFW16.RegistersTmp[160] / 9 - tenderCode, 2);
+                                testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[receiptKind], (Native.CmdExecutor.TenderCode)tenderCode, sum);
+                            }
+
+                            sum = testingInterfaceFW16.RegistersTmp[160] - totalaPaid;
+                            testingInterfaceFW16.AddPayment(document, TestingInterfaceFW16.receiptKind[receiptKind], Native.CmdExecutor.TenderCode.Cash, sum + (random.Next(0, (int)(sum * (10m / 100m)))));       //оплата наличными
+                            Console.Write($"({i++}/{countReciepts}) ");
+                            ret += testingInterfaceFW16.DocumentComplete(document, TestingInterfaceFW16.receiptKind[receiptKind], abort);
+                        }
+
+                    }
+                }
+            }
+            return ret;
         }
 
         /// <summary>
