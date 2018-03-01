@@ -81,7 +81,7 @@ namespace FW16AutoTestUtility
         private void BeginTest()
         {
             Preparation();
-            SimpleTest();
+            if (Program.testing[0]) SimpleTest();
         }
 
         /// <summary>
@@ -119,24 +119,39 @@ namespace FW16AutoTestUtility
 
             testingInterfaceFW16.GetRegisters();
             testingInterfaceFW16.GetCounters();
-
-            errRecieptBigData = UnicReg(TestReceiptBigData());
-            CreateReceiptDataCollection(errRecieptBigData);
-
-            errCorrectionBigData = UnicReg(TestCorrectionBigData());
-            CreateCorrectionDataCollection(errCorrectionBigData);
-
-            errNonFiscalBigData = UnicReg(TestNonFiscalBigData());
-            CreateNonFiscalDataCollection(errNonFiscalBigData);
-
-            errPayCredit = UnicReg(TestReceiptPayCredit());
-
-            errReceiptDataCollection = UnicReg(TestReceiptDataCollection());
-            errCorrectionDataCollection = UnicReg(TestCorrectionDataCollection());
-            errNonFiscalDataCollection = UnicReg(TestNonFiscalDataCollection());
-
-            errRecieptBigDataAbort = UnicReg(TestReceiptBigData(true));                               //вызов функции тестирования чека c отменой.
-            errNonFiscalBigDataAbort = UnicReg(TestNonFiscalBigData(true));                             //вызов функции нефискального документа с отменой
+            if (Program.testing[1])
+            {
+                errRecieptBigData = UnicReg(TestReceiptBigData());
+            }
+            if (Program.testing[2])
+            {
+                errCorrectionBigData = UnicReg(TestCorrectionBigData());
+            }
+            if (Program.testing[3])
+            {
+                errNonFiscalBigData = UnicReg(TestNonFiscalBigData());
+            }
+            if (Program.testing[4])
+            {
+                errPayCredit = UnicReg(TestReceiptPayCredit());
+            }
+            if (Program.testing[6] && Program.testing[1])
+            {
+                CreateReceiptDataCollection(errRecieptBigData);
+                errReceiptDataCollection = UnicReg(TestReceiptDataCollection());
+            }
+            if (Program.testing[7] && Program.testing[2])
+            {
+                CreateCorrectionDataCollection(errCorrectionBigData);
+                errCorrectionDataCollection = UnicReg(TestCorrectionDataCollection());
+            }
+            if (Program.testing[8] && Program.testing[3])
+            {
+                CreateNonFiscalDataCollection(errNonFiscalBigData);
+                errNonFiscalDataCollection = UnicReg(TestNonFiscalDataCollection());
+            }
+            if (Program.testing[11]) { errRecieptBigDataAbort = UnicReg(TestReceiptBigData(true)); }                           //вызов функции тестирования чека c отменой.
+            if (Program.testing[13]) { errNonFiscalBigDataAbort = UnicReg(TestNonFiscalBigData(true)); }                           //вызов функции нефискального документа с отменой
 
             testingInterfaceFW16.CloseShift(nameOperator);      //Закрытие смены для этого теста
 
@@ -425,7 +440,7 @@ namespace FW16AutoTestUtility
             if (registers != null)
             {
                 List<string> regList = new List<string>(registers.Split(','));                      //Разделяет строку на подстроки
-                List<TestDataNFDoc> listNFDocTmp = new List<TestDataNFDoc>();//создаются временные списки
+                List<TestDataNFDoc> listNFDocTmp = new List<TestDataNFDoc>();                       //создаются временные списки
                 foreach (var item in regList)                                                       //перебор номеров регистров
                 {
                     int nfDocType;                              //Тип нефискального документа
