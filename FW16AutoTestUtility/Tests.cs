@@ -137,17 +137,17 @@ namespace FW16AutoTestUtility
             }
             if (Program.testing[6] && Program.testing[1])
             {
-                CreateReceiptDataCollection(errRecieptBigData);
+                CreateReceiptDataCollection(Program.testing[20]?errRecieptBigData:"180,181");
                 errReceiptDataCollection = UnicReg(TestReceiptDataCollection());
             }
             if (Program.testing[7] && Program.testing[2])
             {
-                CreateCorrectionDataCollection(errCorrectionBigData);
+                CreateCorrectionDataCollection(Program.testing[20] ? errCorrectionBigData : "180,181");
                 errCorrectionDataCollection = UnicReg(TestCorrectionDataCollection());
             }
             if (Program.testing[8] && Program.testing[3])
             {
-                CreateNonFiscalDataCollection(errNonFiscalBigData);
+                CreateNonFiscalDataCollection(Program.testing[20] ? errNonFiscalBigData : "180,181");
                 errNonFiscalDataCollection = UnicReg(TestNonFiscalDataCollection());
             }
             if (Program.testing[11]) { errRecieptBigDataAbort = UnicReg(TestReceiptBigData(true)); }                           //вызов функции тестирования чека c отменой.

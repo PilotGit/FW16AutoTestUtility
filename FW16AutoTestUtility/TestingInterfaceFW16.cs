@@ -464,7 +464,7 @@ namespace FW16AutoTestUtility
                 }
             }
             //return RequestRegisters(111, 120);
-            return RequestRegisters(this.registers, RegistersСumulative);
+            return Program.testing[20] ? RequestRegisters(this.registers, RegistersСumulative):"";
 
         }
 
@@ -631,7 +631,7 @@ namespace FW16AutoTestUtility
                     document = null;
                 }
             }
-            return RequestRegisters(this.registers, RegistersСumulative);
+            return Program.testing[20]?RequestRegisters(this.registers, RegistersСumulative):"";
         }
 
         /// <summary>
@@ -897,7 +897,7 @@ namespace FW16AutoTestUtility
                     document = null;
                 }
             }
-            return RequestRegisters(this.registers, RegistersСumulative);
+            return Program.testing[20] ? RequestRegisters(this.registers, RegistersСumulative):"";
         }
 
         /// <summary>
